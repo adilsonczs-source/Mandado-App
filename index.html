@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Mandados · Campo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — compatível com OJ Digital
+   ═══════════════════════════════════════════ */
+:root{
+  --bg:#080d18; --surface:#0f1623; --surf2:#151e2e; --surf3:#1a2540;
+  --border:#1a2540; --border2:rgba(255,255,255,.1);
+  --accent:#2563eb; --cyan:#06b6d4; --green:#10b981;
+  --red:#ef4444; --warn:#f59e0b; --purple:#8b5cf6;
+  --text:#e2e8f0; --muted:#64748b;
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --head:'Syne',sans-serif;
+  --r:12px; --bar:56px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased}
+
+/* ── SCROLL CONTAINER ── */
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+#topbar{flex-shrink:0;height:var(--bar);background:linear-gradient(135deg,#0a1628,#0d1f3c);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;padding:0 14px;gap:10px;z-index:100;box-shadow:0 1px 0 rgba(255,255,255,.04),0 4px 24px rgba(0,0,0,.6);backdrop-filter:blur(12px)}
+#scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#scroll::-webkit-scrollbar{display:none}
+#bottomnav{flex-shrink:0;height:calc(var(--bar) + var(--safe-b));padding-bottom:var(--safe-b);background:rgba(8,13,24,.97);border-top:1px solid rgba(255,255,255,.07);backdrop-filter:blur(20px);display:flex;z-index:100}
+
+/* ── TOPBAR ── */
+.tb-logo{font-family:var(--head);font-size:15px;font-weight:800;flex:1;letter-spacing:-.3px}
+.tb-badge{font-size:10px;font-weight:700;font-family:var(--mono);background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.4);color:#7dd3fc;border-radius:6px;padding:2px 8px;letter-spacing:.5px}
+.tb-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--muted);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:all .15s}
+.tb-btn:active{transform:scale(.91)}
+.tb-btn.hi{color:#7dd3fc;border-color:rgba(6,182,212,.4);background:rgba(6,182,212,.08)}
+
+/* ── BOTTOM NAV ── */
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:none;font-family:var(--font);transition:color .2s;position:relative}
+.nav-btn i{font-size:17px;transition:transform .2s}
+.nav-btn.active{color:#7dd3fc}
+.nav-btn.active i{transform:scale(1.15)}
+.nav-dot{position:absolute;top:8px;right:calc(50% - 14px);width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg);display:none}
+.nav-dot.show{display:block}
+
+/* ── VIEWS ── */
+.view{display:none;padding:14px;min-height:100%;animation:fadeIn .18s ease}
+.view.active{display:block}
+#view-mapa{padding:0!important;height:100%!important;position:relative!important;overflow:hidden!important}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);margin-bottom:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.card-hd{padding:11px 14px 9px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px}
+.card-hd-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted)}
+.card-hd-title i{color:var(--cyan)}
+.card-bd{padding:12px 14px}
+
+/* ── STATS ── */
+.stat-row{display:flex;gap:8px;margin-bottom:10px}
+.stat-chip{flex:1;background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:9px 6px;text-align:center}
+.stat-chip .sv{font-size:22px;font-weight:800;font-family:var(--head);line-height:1}
+.stat-chip .sl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+.sc-total .sv{color:#7dd3fc}
+.sc-done  .sv{color:var(--green)}
+.sc-fail  .sv{color:var(--red)}
+.sc-pend  .sv{color:var(--warn)}
+
+/* ── PROGRESS ── */
+.prog-wrap{height:3px;background:var(--surf2);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width .5s ease}
+
+/* ── SEC LABEL ── */
+.sec-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:10px 0 6px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:8px}
+.sec-lbl i{color:var(--cyan);font-size:10px}
+
+/* ── MANDADO ITEM ── */
+.mand-item{background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,transform .12s}
+.mand-item:active{transform:scale(.99)}
+.mand-item.st-campo{border-color:rgba(6,182,212,.3);background:rgba(6,182,212,.03)}
+.mand-item.st-ok{border-color:rgba(16,185,129,.2);opacity:.72}
+.mand-item.st-fail{border-color:rgba(239,68,68,.2);opacity:.72}
+.mi-row1{display:flex;align-items:flex-start;gap:9px;margin-bottom:6px}
+.mi-num{width:26px;height:26px;border-radius:7px;flex-shrink:0;background:var(--surf2);border:1px solid rgba(255,255,255,.08);font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.mand-item.st-campo .mi-num{background:rgba(6,182,212,.15);color:var(--cyan);border-color:rgba(6,182,212,.3)}
+.mi-info{flex:1;min-width:0}
+.mi-nome{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.mi-end{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-proc{font-size:10px;font-family:var(--mono);color:var(--muted);opacity:.65;margin-top:1px}
+.mi-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.mi-actions{display:flex;align-items:center;gap:6px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.3px;font-family:var(--mono);white-space:nowrap}
+.b-pend{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--warn)}
+.b-campo{background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.3);color:var(--cyan)}
+.b-ok{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:var(--green)}
+.b-fail{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+
+/* ── TIPO PILLS ── */
+.tipo{display:inline-flex;align-items:center;padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.3px;font-family:var(--mono)}
+.tp-citacao{background:rgba(37,99,235,.15);color:#7dd3fc}
+.tp-intimacao{background:rgba(139,92,246,.15);color:#c4b5fd}
+.tp-penhora{background:rgba(245,158,11,.15);color:var(--warn)}
+.tp-busca{background:rgba(239,68,68,.12);color:#fca5a5}
+.tp-avaliacao{background:rgba(16,185,129,.12);color:var(--green)}
+.tp-outro{background:rgba(100,116,139,.15);color:#94a3b8}
+
+/* ── PRIORIDADE ── */
+.prio-urgente::after{content:'🔴';font-size:9px;margin-left:3px}
+
+/* ── BOTÕES ── */
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 14px;border-radius:10px;border:none;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .15s;width:100%}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;box-shadow:0 2px 12px rgba(37,99,235,.3)}
+.btn-green{background:linear-gradient(135deg,var(--green),#059669);color:#fff;box-shadow:0 2px 10px rgba(16,185,129,.25)}
+.btn-warn{background:linear-gradient(135deg,#92400e,var(--warn));color:#fff}
+.btn-red{background:#7f1d1d;color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+.btn-ghost{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.07)}
+.btn-sm{padding:7px 11px;font-size:12px;border-radius:8px;width:auto}
+.btn-xs{padding:5px 9px;font-size:11px;border-radius:7px;width:auto}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.btn-maps{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);color:var(--cyan);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.btn-waze{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);color:var(--green);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.btn-maps:active,.btn-waze:active{transform:scale(.94)}
+
+/* ── INPUTS ── */
+.inp-g{margin-bottom:10px}
+.inp-g label{font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px}
+.inp{width:100%;padding:11px 13px;background:var(--surf2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s}
+.inp:focus{border-color:rgba(37,99,235,.6);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.inp::placeholder{color:var(--muted)}
+textarea.inp{resize:none;line-height:1.6}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px}
+.inp-row{display:flex;gap:8px}
+.inp-row .inp-g{flex:1}
+
+/* ── RESULTADO GRID ── */
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.res-card{background:var(--surf2);border:2px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 10px;text-align:center;cursor:pointer;transition:all .15s}
+.res-card:active{transform:scale(.95)}
+.res-card i{font-size:20px;display:block;margin-bottom:5px}
+.res-card span{font-size:11px;font-weight:600;color:var(--text)}
+.res-card.sel-citado{border-color:rgba(16,185,129,.6);background:rgba(16,185,129,.08)} .res-card.sel-citado i{color:var(--green)}
+.res-card.sel-ausente{border-color:rgba(245,158,11,.6);background:rgba(245,158,11,.08)} .res-card.sel-ausente i{color:var(--warn)}
+.res-card.sel-recusou{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.08)} .res-card.sel-recusou i{color:var(--red)}
+.res-card.sel-endereco{border-color:rgba(139,92,246,.6);background:rgba(139,92,246,.08)} .res-card.sel-endereco i{color:var(--purple)}
+.res-card.sel-cumprido{border-color:rgba(6,182,212,.6);background:rgba(6,182,212,.08)} .res-card.sel-cumprido i{color:var(--cyan)}
+.res-card.sel-prejudicado{border-color:rgba(156,163,175,.4);background:rgba(156,163,175,.06)} .res-card.sel-prejudicado i{color:#9ca3af}
+
+/* ── CHIPS ── */
+.chip-group{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:6px 11px;border-radius:20px;font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;background:var(--surf3);border:1px solid rgba(255,255,255,.08);color:var(--muted);user-select:none;transition:all .15s}
+.chip.sel{color:var(--text);border-color:rgba(37,99,235,.5);background:rgba(37,99,235,.15)}
+
+/* ── FOTOS ── */
+.foto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.foto-thumb{aspect-ratio:1;background:var(--surf2);border-radius:8px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,.08)}
+.foto-thumb img{width:100%;height:100%;object-fit:cover}
+.foto-del{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.7);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--red);cursor:pointer}
+.foto-add{aspect-ratio:1;background:var(--surf2);border-radius:8px;border:1.5px dashed rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;transition:border-color .2s}
+.foto-add i{font-size:20px}
+
+/* ── AI BUTTON ── */
+.ai-btn{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(6,182,212,.1));border:1px solid rgba(139,92,246,.35);border-radius:11px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;width:100%;font-family:var(--font);transition:all .15s}
+.ai-btn:active{transform:scale(.98)}
+.ai-btn .ai-ico{font-size:18px;flex-shrink:0}
+.ai-btn .ai-txt{flex:1;text-align:left}
+.ai-btn .ai-ttl{font-size:13px;font-weight:700;color:var(--text)}
+.ai-btn .ai-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.ai-btn.loading .ai-ico::before{content:'\f110';font-family:'Font Awesome 6 Free';font-weight:900;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── CERTIDÃO ── */
+.cert-box{background:var(--surf2);border:1px solid rgba(255,255,255,.08);border-radius:11px;padding:16px;font-family:Georgia,serif;font-size:12px;line-height:1.9;color:var(--text);white-space:pre-wrap;word-break:break-word;margin-bottom:12px}
+
+/* ── MAPA ── */
+#mapa-ctrl{position:absolute;top:0;left:0;right:0;z-index:10;padding:10px 12px;background:linear-gradient(180deg,rgba(8,13,24,.98) 60%,transparent);pointer-events:none}
+#mapa-ctrl>*{pointer-events:all}
+#rota-info{display:none;margin-top:8px;background:rgba(10,18,32,.92);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:9px 12px}
+.ri-item{text-align:center}
+.ri-val{font-size:15px;font-weight:800;font-family:var(--head);line-height:1}
+.ri-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+.ri-sep{width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 4px}
+#map-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:32px}
+#map-ph i{font-size:44px;opacity:.15}
+#paradas-panel{position:absolute;bottom:0;left:0;right:0;z-index:10;background:rgba(8,13,24,.97);border-top:1px solid rgba(255,255,255,.08);max-height:46%;overflow-y:auto;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.15,.64,1)}
+#paradas-panel.open{transform:translateY(0)}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;padding-bottom:var(--safe-b)}
+.modal-bg.open{display:flex}
+.modal-sheet{background:var(--surface);border:1px solid rgba(255,255,255,.08);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px 16px 24px;max-height:92vh;overflow-y:auto;animation:sheetUp .28s cubic-bezier(.34,1.15,.64,1);position:relative}
+.modal-sheet::-webkit-scrollbar{display:none}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.modal-drag{width:40px;height:4px;background:rgba(255,255,255,.1);border-radius:4px;margin:0 auto 16px}
+.modal-title{font-size:16px;font-weight:800;font-family:var(--head);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.modal-close{position:absolute;top:18px;right:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:var(--muted);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer}
+
+/* ── DIL SECTION ── */
+.dil-sec{background:var(--surf2);border-radius:11px;padding:12px;margin-bottom:10px;border:1px solid rgba(255,255,255,.05)}
+.dil-sec-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.dil-sec-title i{color:var(--cyan)}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:calc(var(--bar) + 14px + var(--safe-b));left:50%;transform:translateX(-50%);z-index:500;pointer-events:none;background:#0f1e3c;border:1.5px solid rgba(37,99,235,.5);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,.5);opacity:0;transition:opacity .2s;max-width:90vw}
+#toast.show{opacity:1}
+#toast.ok{background:#064e3b;border-color:rgba(16,185,129,.5)}
+#toast.err{background:#450a0a;border-color:rgba(239,68,68,.5)}
+#toast.warn{background:#451a03;border-color:rgba(245,158,11,.5)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty i{font-size:40px;opacity:.2;display:block;margin-bottom:12px}
+.empty p{font-size:13px;line-height:1.7;opacity:.7}
+
+/* ── DIVIDER / NOTE ── */
+.divider{height:1px;background:rgba(255,255,255,.06);margin:10px 0}
+.note{background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.18);border-radius:9px;padding:9px 12px;font-size:11px;color:var(--muted);line-height:1.6;display:flex;gap:7px}
+.note i{color:var(--cyan);flex-shrink:0;margin-top:1px}
+
+/* ── IMPORT STEPS ── */
+.imp-steps{display:flex;align-items:center;background:var(--surf2);border-radius:11px;padding:12px;border:1px solid rgba(255,255,255,.06);margin-bottom:14px}
+.imp-step{flex:1;text-align:center}
+.imp-step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin:0 auto 5px;border:2px solid}
+.imp-step-lbl{font-size:10px;color:var(--muted);font-weight:600;line-height:1.4}
+.imp-sep{color:rgba(255,255,255,.12);font-size:14px;padding-bottom:14px}
+.dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px 16px;background:var(--surf2);border:2px dashed rgba(255,255,255,.1);border-radius:13px;cursor:pointer;text-align:center;transition:border-color .2s;margin-bottom:12px}
+.dropzone:active,.dropzone.drag{border-color:var(--cyan)}
+.dz-icon{font-size:30px;color:var(--muted);transition:color .2s}
+.dz-title{font-size:13px;font-weight:700;color:var(--text)}
+.dz-sub{font-size:11px;color:var(--muted)}
+.imp-row{display:flex;align-items:flex-start;gap:10px;padding:10px 2px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;border-radius:8px;transition:background .12s}
+.imp-row.sel{background:rgba(37,99,235,.07)}
+.imp-chk{width:22px;height:22px;border-radius:6px;border:2px solid;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .15s}
+
+/* ── HIST ITEM ── */
+.hist-item{background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px 13px;margin-bottom:8px;cursor:pointer}
+.time-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);color:var(--muted);background:var(--surf2);border-radius:6px;padding:2px 7px}
+
+/* ── CONFIG MODAL ── */
+.cfg-ia-opt{flex:1;background:var(--surf2);border:2px solid rgba(255,255,255,.08);border-radius:11px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s}
+.cfg-ia-opt.sel-claude{border-color:rgba(139,92,246,.7);background:rgba(139,92,246,.1)}
+.cfg-ia-opt.sel-gemini{border-color:rgba(16,185,129,.6);background:rgba(16,185,129,.08)}
+
+/* ── BAIRRO GROUPS ── */
+.bairro-group{margin-bottom:14px}
+.bairro-group-hdr{display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.25);border-radius:9px;margin-bottom:6px;cursor:pointer;transition:background .15s}
+.bairro-group-hdr:active{background:rgba(37,99,235,.18)}
+.bairro-group-hdr .bg-nome{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7dd3fc;flex:1;font-family:var(--head)}
+.bairro-group-hdr .bg-cnt{font-size:10px;font-weight:700;font-family:var(--mono);color:var(--muted)}
+.bairro-group-hdr .bg-tracar{font-size:11px;font-weight:700;color:#7dd3fc;background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.4);border-radius:7px;padding:4px 9px;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .15s}
+.bairro-group-hdr .bg-tracar:active{transform:scale(.94)}
+.bairro-group-items{display:none}
+.bairro-group-items.open{display:block}
+
+/* ── SEGMENTO TABS ── */
+.seg-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.seg-tabs::-webkit-scrollbar{display:none}
+.seg-tab{flex-shrink:0;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:var(--surf2);color:var(--muted);font-family:var(--font);transition:all .15s;white-space:nowrap}
+.seg-tab.active{background:rgba(37,99,235,.2);border-color:rgba(37,99,235,.5);color:#7dd3fc}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:4px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ TOPBAR ══ -->
+  <div id="topbar">
+    <span style="font-size:17px">⚖️</span>
+    <span class="tb-logo">Mandados · Campo</span>
+    <span class="tb-badge" id="tb-count">0 mandados</span>
+    <button class="tb-btn" onclick="abrirNovo()" title="Novo mandado"><i class="fa fa-plus"></i></button>
+    <button class="tb-btn hi" onclick="abrirImport()" title="Importar do OJ Digital"><i class="fa fa-file-import"></i></button>
+    <button class="tb-btn" onclick="abrirCfg()" title="Configurações"><i class="fa fa-gear"></i></button>
+  </div>
+
+  <!-- ══ SCROLL ══ -->
+  <div id="scroll">
+
+    <!-- ═ VIEW: ROTA ═ -->
+    <div id="view-rota" class="view active">
+      <div class="stat-row">
+        <div class="stat-chip sc-total"><div class="sv" id="st-total">0</div><div class="sl">Total</div></div>
+        <div class="stat-chip sc-done"> <div class="sv" id="st-done">0</div> <div class="sl">Feitos</div></div>
+        <div class="stat-chip sc-fail"> <div class="sv" id="st-fail">0</div> <div class="sl">S/ êxito</div></div>
+        <div class="stat-chip sc-pend"> <div class="sv" id="st-pend">0</div> <div class="sl">Pend.</div></div>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div id="bairro-filter" style="display:none;margin-bottom:8px">
+        <div class="seg-tabs" id="rota-bairro-tabs"></div>
+      </div>
+      <div id="list-rota"></div>
+    </div>
+
+    <!-- ═ VIEW: MAPA ═ -->
+    <div id="view-mapa" class="view">
+      <div id="mapa-ctrl">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" id="btn-tracar" onclick="tracarRota(false)" style="flex:1"><i class="fa fa-route"></i> Traçar Rota</button>
+          <button class="tb-btn hi" id="btn-gps" onclick="tracarRota(true)" title="Partir do meu local"><i class="fa fa-location-dot"></i></button>
+          <button class="tb-btn" onclick="abrirCfg()" title="Configurações API"><i class="fa fa-key"></i></button>
+        </div>
+        <div id="rota-info">
+          <div style="display:flex;align-items:center;gap:4px">
+            <div class="ri-item" style="flex:1"><div class="ri-val" id="ri-dist" style="color:#7dd3fc">—</div><div class="ri-lbl">Distância</div></div>
+            <div class="ri-sep"></div>
+            <div class="ri-item" style="flex:1"><div class="ri-val" id="ri-tempo" style="color:var(--cyan)">—</div><div class="ri-lbl">Tempo est.</div></div>
+            <div class="ri-sep"></div>
+            <div class="ri-item" style="flex:1"><div class="ri-val" id="ri-stops" style="color:var(--warn)">—</div><div class="ri-lbl">Paradas</div></div>
+            <button class="tb-btn btn-sm" onclick="abrirRotaExterna()" style="margin-left:8px;width:32px;height:32px"><i class="fa fa-arrow-up-right-from-square" style="font-size:12px"></i></button>
+          </div>
+        </div>
+      </div>
+      <div id="map-container" style="width:100%;height:100%;background:var(--surf2)">
+        <div id="map-ph">
+          <i class="fa fa-map"></i>
+          <div style="font-size:14px;font-weight:600">Mapa de Rota</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.7">Configure a chave do Google Maps<br>e trace a rota dos mandados.</div>
+          <button class="btn btn-primary btn-sm" style="width:auto;margin-top:4px" onclick="abrirCfg()"><i class="fa fa-key"></i> Configurar</button>
+        </div>
+        <div id="map" style="width:100%;height:100%;display:none"></div>
+      </div>
+      <div id="paradas-panel">
+        <div style="display:flex;align-items:center;padding:8px 14px 4px">
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-family:var(--head);flex:1"><i class="fa fa-list-ol" style="color:var(--cyan)"></i> Paradas por Bairro</span>
+          <button onclick="fecharParadas()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px"><i class="fa fa-chevron-down"></i></button>
+        </div>
+        <div id="seg-tabs" class="seg-tabs" style="padding:0 12px"></div>
+        <div id="paradas-list" style="padding:4px 12px 12px"></div>
+      </div>
+    </div>
+
+    <!-- ═ VIEW: DILIGÊNCIA ═ -->
+    <div id="view-dil" class="view">
+      <!-- Header dinâmico -->
+      <div id="dil-hdr" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <button class="btn btn-ghost btn-sm" onclick="navTo('rota')"><i class="fa fa-arrow-left"></i> Rota</button>
+          <div id="dil-status-badge" class="badge b-pend" style="margin-left:auto">Pendente</div>
+        </div>
+        <div style="font-size:16px;font-weight:700;font-family:var(--head);margin-bottom:2px" id="dil-nome"></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="dil-end"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="dil-tags"></div>
+      </div>
+
+      <!-- Navegação -->
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title"><i class="fa fa-map-location-dot"></i> Navegação até o local</span></div>
+        <div class="card-bd">
+          <div id="dil-nav-btns" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+          <div class="inp-g">
+            <label>Horário de chegada</label>
+            <input type="time" class="inp" id="dil-hora">
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultado -->
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title"><i class="fa fa-circle-check"></i> Resultado da Diligência</span></div>
+        <div class="card-bd">
+          <div class="res-grid" id="res-grid">
+            <div class="res-card" data-res="citado"      onclick="selRes(this,'citado')"><i class="fa fa-user-check"></i><span>Citado/Intimado</span></div>
+            <div class="res-card" data-res="ausente"     onclick="selRes(this,'ausente')"><i class="fa fa-user-slash"></i><span>Ausente</span></div>
+            <div class="res-card" data-res="recusou"     onclick="selRes(this,'recusou')"><i class="fa fa-hand"></i><span>Recusou receber</span></div>
+            <div class="res-card" data-res="endereco"    onclick="selRes(this,'endereco')"><i class="fa fa-map-pin"></i><span>End. não localizado</span></div>
+            <div class="res-card" data-res="cumprido"    onclick="selRes(this,'cumprido')"><i class="fa fa-gavel"></i><span>Ato cumprido</span></div>
+            <div class="res-card" data-res="prejudicado" onclick="selRes(this,'prejudicado')"><i class="fa fa-circle-xmark"></i><span>Prejudicado</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dados -->
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title"><i class="fa fa-pen-to-square"></i> Dados</span></div>
+        <div class="card-bd">
+          <div class="dil-sec">
+            <div class="dil-sec-title"><i class="fa fa-user"></i> Pessoa encontrada</div>
+            <div class="inp-g"><label>Nome completo</label><input class="inp" id="d-pessoa" placeholder="Nome de quem foi encontrado..."></div>
+            <div class="inp-row">
+              <div class="inp-g"><label>Qualificação</label>
+                <select class="inp" id="d-qual">
+                  <option value="">— selecione —</option>
+                  <option>Próprio destinatário</option>
+                  <option>Cônjuge/Companheiro(a)</option>
+                  <option>Familiar</option>
+                  <option>Funcionário/Empregado</option>
+                  <option>Vizinho</option>
+                  <option>Porteiro/Zelador</option>
+                </select>
+              </div>
+              <div class="inp-g"><label>RG/CPF (opcional)</label><input class="inp" id="d-doc" placeholder="—"></div>
+            </div>
+          </div>
+
+          <div class="dil-sec">
+            <div class="dil-sec-title"><i class="fa fa-location-dot"></i> Local</div>
+            <div class="inp-row">
+              <div class="inp-g"><label>Tipo de imóvel</label>
+                <select class="inp" id="d-imovel">
+                  <option value="">— selecione —</option>
+                  <option>Residência</option><option>Comércio</option><option>Escritório/Empresa</option>
+                  <option>Condomínio</option><option>Sítio/Fazenda</option><option>Não identificado</option>
+                </select>
+              </div>
+              <div class="inp-g"><label>Situação</label>
+                <select class="inp" id="d-sit">
+                  <option value="">— selecione —</option>
+                  <option>Porta aberta / atendeu</option><option>Porta fechada</option>
+                  <option>Portão fechado</option><option>Imóvel fechado/abandonado</option>
+                  <option>Imóvel em obras</option><option>Imóvel vendido/transferido</option>
+                </select>
+              </div>
+            </div>
+            <div class="inp-g"><label>Obs. do local</label><textarea class="inp" id="d-obslocal" rows="2" placeholder="Observações relevantes..."></textarea></div>
+          </div>
+
+          <div class="dil-sec">
+            <div class="dil-sec-title"><i class="fa fa-note-sticky"></i> Ocorrências</div>
+            <div class="chip-group" id="chips-oc" style="margin-bottom:10px">
+              <div class="chip" onclick="toggleChip(this)">Declarou residir no local</div>
+              <div class="chip" onclick="toggleChip(this)">Negou-se a assinar</div>
+              <div class="chip" onclick="toggleChip(this)">Recebeu cópia</div>
+              <div class="chip" onclick="toggleChip(this)">Informou novo endereço</div>
+              <div class="chip" onclick="toggleChip(this)">Vizinhos consultados</div>
+              <div class="chip" onclick="toggleChip(this)">Comunicou viagem</div>
+              <div class="chip" onclick="toggleChip(this)">Em lugar incerto</div>
+            </div>
+            <div class="inp-g"><label>Texto livre</label><textarea class="inp" id="d-obs" rows="3" placeholder="Descreva ocorrências relevantes..."></textarea></div>
+          </div>
+
+          <div class="dil-sec">
+            <div class="dil-sec-title"><i class="fa fa-camera"></i> Fotos</div>
+            <div class="foto-grid" id="foto-grid">
+              <div class="foto-add" onclick="addFoto()"><i class="fa fa-camera"></i><span>Adicionar</span></div>
+            </div>
+            <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none" multiple onchange="handleFotos(event)">
+            <div class="note"><i class="fa fa-info-circle"></i> Fotos salvas localmente no dispositivo.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gerar certidão -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-hd"><span class="card-hd-title"><i class="fa fa-file-signature"></i> Certidão</span></div>
+        <div class="card-bd">
+          <button class="ai-btn" id="btn-cert" onclick="gerarCertidao()">
+            <span class="ai-ico">✨</span>
+            <div class="ai-txt">
+              <div class="ai-ttl">Gerar Certidão com IA</div>
+              <div class="ai-sub" id="cert-ia-sub">Configure a IA nas configurações</div>
+            </div>
+            <i class="fa fa-chevron-right" style="color:var(--muted);font-size:12px"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-bottom:8px">
+        <button class="btn btn-green" onclick="salvarDil(true)"><i class="fa fa-check"></i> Concluir</button>
+        <button class="btn btn-ghost" style="flex:none;width:auto;padding:12px 14px" onclick="salvarDil(false)" title="Salvar rascunho"><i class="fa fa-save"></i></button>
+      </div>
+    </div>
+
+    <!-- ═ VIEW: CERTIDÃO ═ -->
+    <div id="view-cert" class="view">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <button class="btn btn-ghost btn-sm" onclick="navTo('dil')"><i class="fa fa-arrow-left"></i> Diligência</button>
+        <span style="font-size:13px;font-weight:700;flex:1" id="cert-hdr-nome">Certidão</span>
+      </div>
+      <div class="cert-box" id="cert-texto">Preencha os dados e toque em "Gerar Certidão com IA".</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn btn-primary btn-sm" onclick="copiarCert()"><i class="fa fa-copy"></i> Copiar</button>
+        <button class="btn btn-ghost btn-sm" onclick="compartilharCert()"><i class="fa fa-share-nodes"></i> Compartilhar</button>
+        <button class="btn btn-warn btn-sm" onclick="gerarCertidao()"><i class="fa fa-rotate"></i> Regenerar</button>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title"><i class="fa fa-pen"></i> Editar texto</span></div>
+        <div class="card-bd">
+          <textarea class="inp" id="cert-edit" rows="12" style="font-family:Georgia,serif;font-size:12px;line-height:1.8"></textarea>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="aplicarEdicaoCert()"><i class="fa fa-check"></i> Aplicar edição</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═ VIEW: HISTÓRICO ═ -->
+    <div id="view-hist" class="view">
+      <div class="sec-lbl"><i class="fa fa-clock-rotate-left"></i> Diligências Realizadas</div>
+      <div id="list-hist"></div>
+    </div>
+
+  </div><!-- /scroll -->
+
+  <!-- ══ BOTTOM NAV ══ -->
+  <div id="bottomnav">
+    <button class="nav-btn active" id="nav-rota" onclick="navTo('rota')"><i class="fa fa-route"></i>Rota</button>
+    <button class="nav-btn" id="nav-mapa" onclick="navTo('mapa')"><i class="fa fa-map"></i>Mapa</button>
+    <button class="nav-btn" id="nav-dil"  onclick="navTo('dil')"><i class="fa fa-pen-to-square"></i>Diligência<div class="nav-dot" id="dot-dil"></div></button>
+    <button class="nav-btn" id="nav-cert" onclick="navTo('cert')"><i class="fa fa-file-lines"></i>Certidão</button>
+    <button class="nav-btn" id="nav-hist" onclick="navTo('hist')"><i class="fa fa-clock-rotate-left"></i>Histórico</button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══ MODAL: NOVO/EDITAR MANDADO ══ -->
+<div class="modal-bg" id="modal-novo">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <button class="modal-close" onclick="fecharNovo()"><i class="fa fa-xmark"></i></button>
+    <div class="modal-title" id="modal-novo-title">Novo Mandado</div>
+    <div class="modal-sub">Dados básicos do mandado</div>
+    <div class="inp-g"><label>Nº Processo (CNJ)</label><input class="inp" id="nm-proc" placeholder="0000000-00.0000.0.00.0000" style="font-family:var(--mono);font-size:13px"></div>
+    <div class="inp-row">
+      <div class="inp-g"><label>Tipo</label>
+        <select class="inp" id="nm-tipo">
+          <option value="citacao">Citação</option><option value="intimacao">Intimação</option>
+          <option value="penhora">Penhora/Avaliação</option><option value="busca">Busca e Apreensão</option>
+          <option value="avaliacao">Avaliação Judicial</option><option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="inp-g"><label>Prioridade</label>
+        <select class="inp" id="nm-prio"><option value="normal">Normal</option><option value="urgente">🔴 Urgente</option><option value="baixa">Baixa</option></select>
+      </div>
+    </div>
+    <div class="inp-g"><label>Destinatário / Parte</label><input class="inp" id="nm-nome" placeholder="Nome completo"></div>
+    <div class="inp-g"><label>Logradouro e número</label><input class="inp" id="nm-logr" placeholder="Rua, Av., nº..."></div>
+    <div class="inp-row">
+      <div class="inp-g"><label>Bairro</label><input class="inp" id="nm-bairro" placeholder="Bairro"></div>
+      <div class="inp-g"><label>Cidade</label><input class="inp" id="nm-cidade" placeholder="Cuiabá" value="Cuiabá"></div>
+    </div>
+    <div class="inp-row">
+      <div class="inp-g"><label>Vara</label><input class="inp" id="nm-vara" placeholder="Ex: 3ª Vara Cível"></div>
+      <div class="inp-g"><label>UF</label><input class="inp" id="nm-uf" placeholder="MT" value="MT"></div>
+    </div>
+    <div class="inp-g"><label>Observações do mandado</label><textarea class="inp" id="nm-obs" rows="2" placeholder="Informações relevantes..."></textarea></div>
+    <div class="btn-row" style="margin-top:4px">
+      <button class="btn btn-ghost" onclick="fecharNovo()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarNovo()"><i class="fa fa-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: IMPORTAR OJ DIGITAL ══ -->
+<div class="modal-bg" id="modal-import">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <button class="modal-close" onclick="fecharImport()"><i class="fa fa-xmark"></i></button>
+    <div class="modal-title">📥 Importar do OJ Digital</div>
+    <div class="modal-sub">Exporte o JSON no OJ Digital e abra aqui</div>
+
+    <div class="imp-steps">
+      <div class="imp-step">
+        <div class="imp-step-num" style="background:rgba(6,182,212,.15);border-color:var(--cyan);color:var(--cyan)">1</div>
+        <div class="imp-step-lbl">OJ Digital<br>Relatório → Exportar JSON</div>
+      </div>
+      <div class="imp-sep">›</div>
+      <div class="imp-step">
+        <div class="imp-step-num" style="background:rgba(37,99,235,.15);border-color:var(--accent);color:#7dd3fc">2</div>
+        <div class="imp-step-lbl">Selecione<br>o arquivo abaixo</div>
+      </div>
+      <div class="imp-sep">›</div>
+      <div class="imp-step">
+        <div class="imp-step-num" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.4);color:var(--green)">3</div>
+        <div class="imp-step-lbl">Escolha e<br>importe</div>
+      </div>
+    </div>
+
+    <label class="dropzone" id="imp-dz" ondragover="impDragOver(event)" ondrop="impDrop(event)">
+      <i class="fa fa-file-arrow-up dz-icon" id="dz-icon"></i>
+      <div class="dz-title" id="dz-title">Toque para selecionar o arquivo</div>
+      <div class="dz-sub" id="dz-sub">OJ_Digital_DD-MM-AAAA.json</div>
+      <input type="file" accept=".json,application/json" style="display:none" id="imp-file" onchange="impFileChange(event)">
+    </label>
+
+    <div id="imp-status" style="display:none;margin-bottom:12px"></div>
+    <div id="imp-lista" style="max-height:280px;overflow-y:auto;margin-bottom:12px"></div>
+
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost" onclick="fecharImport()" style="width:auto;padding:11px 14px">Cancelar</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost btn-sm" id="imp-sel-todos" onclick="impSelTodos()" style="display:none;width:auto">Todos</button>
+      <button class="btn btn-green" id="imp-btn" onclick="impExecutar()" style="display:none;width:auto;padding:11px 18px">
+        <i class="fa fa-file-import"></i> <span id="imp-btn-lbl">Importar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: CONFIGURAÇÕES ══ -->
+<div class="modal-bg" id="modal-cfg">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <button class="modal-close" onclick="fecharCfg()"><i class="fa fa-xmark"></i></button>
+    <div class="modal-title">⚙️ Configurações</div>
+    <div class="modal-sub">Chaves de API e preferências</div>
+
+    <div class="inp-g">
+      <label><i class="fa fa-map" style="color:var(--cyan)"></i> Chave API — Google Maps</label>
+      <input class="inp" id="cfg-gmaps" type="password" placeholder="AIzaSy..." style="font-family:var(--mono);font-size:12px">
+    </div>
+    <div class="note" style="margin-bottom:12px"><i class="fa fa-circle-info"></i> Ative: Maps JavaScript API · Directions API · Geocoding API</div>
+
+    <div class="inp-g">
+      <label><i class="fa fa-wand-magic-sparkles" style="color:var(--purple)"></i> Chave API — Claude (Anthropic)</label>
+      <input class="inp" id="cfg-claude" type="password" placeholder="sk-ant-api03-..." style="font-family:var(--mono);font-size:12px">
+    </div>
+
+    <div class="inp-g">
+      <label><i class="fa fa-gem" style="color:var(--green)"></i> Chave API — Gemini (Google)</label>
+      <input class="inp" id="cfg-gemini" type="password" placeholder="AIzaSy..." style="font-family:var(--mono);font-size:12px">
+    </div>
+
+    <div class="inp-g">
+      <label><i class="fa fa-robot" style="color:var(--warn)"></i> IA para certidões</label>
+      <div style="display:flex;gap:8px;margin-top:4px" id="ia-sel">
+        <div class="cfg-ia-opt" id="ia-claude" onclick="selIA('claude')">
+          <div style="font-size:18px;margin-bottom:3px">🤖</div>
+          <div style="font-size:11px;font-weight:700">Claude</div>
+          <div style="font-size:9px;color:var(--muted)">Anthropic</div>
+        </div>
+        <div class="cfg-ia-opt" id="ia-gemini" onclick="selIA('gemini')">
+          <div style="font-size:18px;margin-bottom:3px">✨</div>
+          <div style="font-size:11px;font-weight:700">Gemini</div>
+          <div style="font-size:9px;color:var(--muted)">Google</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inp-g">
+      <label><i class="fa fa-location-dot" style="color:var(--green)"></i> Ponto de partida da rota (opcional)</label>
+      <input class="inp" id="cfg-origem" placeholder="Ex: Fórum de Cuiabá, MT — vazio = GPS">
+    </div>
+
+    <div class="inp-g">
+      <label><i class="fa fa-user" style="color:var(--cyan)"></i> Nome do Oficial</label>
+      <input class="inp" id="cfg-oficial" placeholder="Nome para as certidões">
+    </div>
+    <div class="inp-row">
+      <div class="inp-g"><label>Matrícula</label><input class="inp" id="cfg-mat" placeholder="Matrícula"></div>
+      <div class="inp-g"><label>Lotação</label><input class="inp" id="cfg-lot" placeholder="Ex: Zona 07 — Cuiabá/MT"></div>
+    </div>
+
+    <div class="btn-row" style="margin-top:4px">
+      <button class="btn btn-ghost" onclick="fecharCfg()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCfg()"><i class="fa fa-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast"><i id="toast-ico" class="fa fa-check"></i><span id="toast-msg">OK</span></div>
+
+<script>
+'use strict';
+
+
+// ═══════════════════════════════════════════════════════
+// CONSTANTES — espelham OJ Digital para futura fusão
+// ═══════════════════════════════════════════════════════
+const DB         = 'mandados_campo_v3';
+const DB_HIST    = 'mandados_hist_v3';
+const CFG_KEY    = 'mandados_cfg_v1';
+const GMAPS_KEY  = 'gm_api_key_v1';
+const CLAUDE_KEY = 'claude_api_key_v1';
+const GEMINI_KEY = 'gemini_api_key_v1';
+const IA_PREF    = 'ia_pref_v1';
+const ORIGEM_KEY = 'gm_origem_v1';
+
+// ═══════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════
+let mandados  = [];
+let historico = [];
+let cfg       = {};
+let ativoId   = null;
+let fotos     = [];
+let mapsOk    = false;
+let mapObj    = null, dirSvc = null, dirRend = null;
+let marcadores = [], rotaOrdenada = null;
+let impLista  = [], impSel = new Set();
+let editId    = null;
+
+// ═══════════════════════════════════════════════════════
+// PERSISTÊNCIA
+// ═══════════════════════════════════════════════════════
+function load(){
+  try{ mandados  = JSON.parse(localStorage.getItem(DB)     ||'[]'); }catch{ mandados=[]; }
+  try{ historico = JSON.parse(localStorage.getItem(DB_HIST)||'[]'); }catch{ historico=[]; }
+  try{ cfg       = JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); }catch{ cfg={}; }
+}
+function save(){
+  localStorage.setItem(DB,      JSON.stringify(mandados));
+  localStorage.setItem(DB_HIST, JSON.stringify(historico));
+  localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+}
+
+// ═══════════════════════════════════════════════════════
+// HELPERS — compatíveis com estrutura do OJ Digital
+// ═══════════════════════════════════════════════════════
+const TIPO_LABEL = {citacao:'Citação',intimacao:'Intimação',penhora:'Penhora',busca:'Busca e Apreensão',avaliacao:'Avaliação',outro:'Outro'};
+const TIPO_CLASS = {citacao:'tp-citacao',intimacao:'tp-intimacao',penhora:'tp-penhora',busca:'tp-busca',avaliacao:'tp-avaliacao',outro:'tp-outro'};
+const STATUS_LABEL = {pendente:'Pendente',em_campo:'Em campo',citado:'Citado',intimado:'Intimado',ausente:'Ausente',recusou:'Recusou',endereco:'End. não encontrado',cumprido:'Cumprido',prejudicado:'Prejudicado'};
+const STATUS_CLASS = {pendente:'b-pend',em_campo:'b-campo',citado:'b-ok',intimado:'b-ok',cumprido:'b-ok',ausente:'b-fail',recusou:'b-fail',endereco:'b-fail',prejudicado:'b-fail'};
+const RES_STATUS   = {citado:'citado',ausente:'ausente',recusou:'recusou',endereco:'endereco',cumprido:'cumprido',prejudicado:'prejudicado'};
+const RES_DONE     = new Set(['citado','intimado','cumprido']);
+const RES_FAIL     = new Set(['ausente','recusou','endereco','prejudicado']);
+
+function tl(t){ return TIPO_LABEL[t]||t; }
+function tc(t){ return TIPO_CLASS[t]||'tp-outro'; }
+function sl(s){ return STATUS_LABEL[s]||s||'Pendente'; }
+function sc(s){ return STATUS_CLASS[s]||'b-pend'; }
+
+function enderecoCompleto(m){
+  // Endereço completo para exibição
+  return [m.logradouro||'', m.complemento||'', m.bairro||'', m.cidade||'Cuiabá', m.uf||'MT'].filter(Boolean).join(', ');
+}
+
+function enderecoMaps(m){
+  // Endereço para geocodificação — "Brasil" ancora no país e evita cidades homônimas
+  let logr = (m.logradouro||'').trim();
+  const bairro = (m.bairro||'').trim();
+  const cidade = (m.cidade||'Cuiabá').trim();
+  const uf = (m.uf||'MT').trim();
+
+  // Remove complementos que confundem o geocodificador: Apto, Casa, Bloco, Cond etc.
+  logr = logr.replace(/\b(ap(to?)?|apto|apartamento|casa|bloco|bl|conj|conjunto|lt|lote|cs|sala|andar|coberturas?|fund[ao]s?|frente|cond\.?|condomínio|lado\s+par|lado\s+impar|até\s+n[oº°]\s*\d+)\b.*$/i,'').trim();
+  // Remove vírgula ou traço sobrando no final
+  logr = logr.replace(/[,\-]+$/, '').trim();
+
+  // Logradouro inválido (vazio, "Rua NA", "S/N"): usa só bairro como referência
+  const logrValido = logr && !/^(rua\s+na|s\/n|sn)$/i.test(logr);
+
+  // Endereços com "RUA 257", "QUADRA 49" etc. — adiciona bairro logo após o número
+  // para ajudar o geocodificador a localizar em Cuiabá
+  let endFinal;
+  if(logrValido){
+    // Se o logradouro tem só número (ex: "RUA 257, Nº 245"), inclui bairro junto
+    const temSoNumero = /^(rua|avenida|av\.?|r\.)\s+\d+/i.test(logr);
+    endFinal = temSoNumero
+      ? [logr, bairro, cidade, uf, 'Brasil'].filter(Boolean).join(', ')
+      : [logr, bairro, cidade, uf, 'Brasil'].filter(Boolean).join(', ');
+  } else {
+    endFinal = [bairro, cidade, uf, 'Brasil'].filter(Boolean).join(', ');
+  }
+
+  return endFinal;
+}
+
+function isPendente(m){ return !m.status||m.status==='pendente'||m.status==='em_campo'; }
+function isConcluido(m){ return !isPendente(m); }
+
+function agora(){ return new Date().toTimeString().slice(0,5); }
+function fmtDate(iso){ try{ return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch{ return '—'; } }
+
+// ═══════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════════════════
+function navTo(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('nav-'+v).classList.add('active');
+  document.getElementById('scroll').scrollTop=0;
+  if(v==='mapa') aoEntrarMapa();
+  if(v==='hist') renderHist();
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER ROTA
+// ═══════════════════════════════════════════════════════
+function normBairro(m){ return (m.bairro||'').trim().toUpperCase()||'SEM BAIRRO'; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderRota(){
+  const pend = mandados.filter(isPendente);
+  const conc = mandados.filter(isConcluido);
+  const done = mandados.filter(m=>RES_DONE.has(m.status)).length;
+  const fail = mandados.filter(m=>RES_FAIL.has(m.status)).length;
+  const total= mandados.length;
+
+  document.getElementById('st-total').textContent = total;
+  document.getElementById('st-done').textContent  = done;
+  document.getElementById('st-fail').textContent  = fail;
+  document.getElementById('st-pend').textContent  = pend.length;
+  document.getElementById('tb-count').textContent = total+' mandado'+(total!==1?'s':'');
+  document.getElementById('prog-fill').style.width = total ? Math.round(((done+fail)/total)*100)+'%' : '0%';
+  document.getElementById('dot-dil').classList.toggle('show', ativoId != null);
+
+  let html = '';
+  if(!total){ document.getElementById('list-rota').innerHTML='<div class="empty"><i class="fa fa-clipboard-list"></i><p>Nenhum mandado cadastrado.<br>Toque em <strong>+</strong> para adicionar.</p></div>'; return; }
+
+  if(pend.length){
+    html+=`<div class="sec-lbl"><i class="fa fa-clock"></i> Pendentes (${pend.length})</div>`;
+    pend.forEach((m,i)=>{ html+=renderItem(m,i+1,false); });
+  }
+  if(conc.length){
+    html+=`<div class="sec-lbl" style="margin-top:8px"><i class="fa fa-circle-check"></i> Concluídos (${conc.length})</div>`;
+    conc.forEach(m=>{ html+=renderItem(m,null,true); });
+  }
+  // Inserção segura via innerHTML direto — mais confiável que fragmentos
+  const listEl = document.getElementById('list-rota');
+  listEl.innerHTML = html;
+  // Bairro filter tabs na view rota
+  if(pend.length>0){
+    const bairros=[...new Set(pend.map(m=>normBairro(m)))].sort();
+    const tabsEl=document.getElementById('rota-bairro-tabs');
+    const filterEl=document.getElementById('bairro-filter');
+    if(bairros.length>1){
+      tabsEl.innerHTML='<div class="seg-tab active" data-b="TODOS">Todos</div>'+
+        bairros.map(b=>'<div class="seg-tab" data-b="'+esc(b)+'">'+esc(b)+'</div>').join('');
+      tabsEl.querySelectorAll('.seg-tab').forEach(t=>{ t.onclick=function(){ filtrarRotaBairro(this,this.dataset.b); }; });
+      filterEl.style.display='block';
+    } else { filterEl.style.display='none'; }
+  }
+}
+
+function filtrarRotaBairro(tab,bairro){
+  document.querySelectorAll('#rota-bairro-tabs .seg-tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  document.querySelectorAll('#list-rota .mand-item,.mand-item').forEach(el=>{
+    if(bairro==='TODOS'){ el.style.display=''; return; }
+    // find mandado by id in onclick
+    const onclick=el.getAttribute('onclick')||'';
+    const match=onclick.match(/abrirDil\('([^']+)'\)/);
+    if(match){
+      const m=mandados.find(x=>x.id===match[1]);
+      el.style.display=(m&&normBairro(m)===bairro)?'':'none';
+    }
+  });
+  // Also hide sec-lbl if all items hidden
+  document.querySelectorAll('#list-rota .sec-lbl').forEach(lbl=>{
+    const next=lbl.nextElementSibling;
+    lbl.style.display=(next&&next.style.display==='none')?'none':'';
+  });
+}
+
+function renderItem(m,num,conc){
+  const end = enderecoCompleto(m);
+  const endEnc = encodeURIComponent(end);
+  // Usa ID do mandado para navegar — evita passar endereço em onclick
+  const statusCls = conc ? (RES_DONE.has(m.status)?'st-ok':'st-fail') : (m.id===ativoId?'st-campo':'');
+  const numHtml = num
+    ? `<div class="mi-num">${num}</div>`
+    : `<div class="mi-num" style="font-size:9px">${RES_DONE.has(m.status)?'✓':'✗'}</div>`;
+  const prioHtml = m.prioridade==='urgente' ? '<span class="prio-urgente"></span>' : '';
+  const endMaps = encodeURIComponent(enderecoMaps(m));
+  const navHtml = !conc ? `<button class="btn-maps" onclick="abrirMaps('${endMaps}');event.stopPropagation()" title="Abrir rota no Maps"><i class="fa fa-diamond-turn-right"></i>Rota</button><button class="btn-maps" style="background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.4);color:#c4b5fd;margin-left:4px" onclick="abrirMapsBusca('${endMaps}');event.stopPropagation()" title="Buscar endereço no Maps"><i class="fa fa-map-pin"></i>Buscar</button>` : '';
+  const acaoHtml = !conc
+    ? `<button class="btn btn-xs btn-primary" style="margin-left:auto" onclick="abrirDil('${m.id}');event.stopPropagation()"><i class="fa fa-pen"></i> Registrar</button>`
+    : `<button class="btn btn-xs btn-ghost" style="margin-left:auto" onclick="abrirDil('${m.id}');event.stopPropagation()"><i class="fa fa-eye"></i> Ver</button>`;
+
+  return `<div class="mand-item ${statusCls}" onclick="abrirDil('${m.id}')">
+    <div class="mi-row1">
+      ${numHtml}
+      <div class="mi-info">
+        <div class="mi-nome">${esc(m.nome)||'—'}${prioHtml}</div>
+        <div class="mi-end"><i class="fa fa-location-dot" style="font-size:9px;margin-right:3px"></i>${esc(end)}</div>
+        <div class="mi-proc">${esc(m.processo)}</div>
+      </div>
+      <div class="mi-meta">
+        <span class="badge ${sc(m.status)}">${sl(m.status)}</span>
+        <span class="tipo ${tc(m.tipo)}">${tl(m.tipo)}</span>
+      </div>
+    </div>
+    <div class="mi-actions">
+      ${navHtml}
+      ${acaoHtml}
+      <button class="btn btn-xs btn-ghost" style="width:auto;padding:5px 8px" onclick="abrirNovo('${m.id}');event.stopPropagation()"><i class="fa fa-ellipsis"></i></button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// NOVO / EDITAR MANDADO
+// ═══════════════════════════════════════════════════════
+function abrirNovo(id){
+  editId = id||null;
+  document.getElementById('modal-novo-title').textContent = id ? 'Editar Mandado' : 'Novo Mandado';
+  const f = id ? mandados.find(x=>x.id===id) : null;
+  document.getElementById('nm-proc').value   = f?.processo||'';
+  document.getElementById('nm-tipo').value   = f?.tipo||'citacao';
+  document.getElementById('nm-prio').value   = f?.prioridade||'normal';
+  document.getElementById('nm-nome').value   = f?.nome||'';
+  document.getElementById('nm-logr').value   = f?.logradouro||'';
+  document.getElementById('nm-bairro').value = f?.bairro||'';
+  document.getElementById('nm-cidade').value = f?.cidade||'Cuiabá';
+  document.getElementById('nm-uf').value     = f?.uf||'MT';
+  document.getElementById('nm-vara').value   = f?.vara||'';
+  document.getElementById('nm-obs').value    = f?.obs||'';
+  document.getElementById('modal-novo').classList.add('open');
+}
+function fecharNovo(){ document.getElementById('modal-novo').classList.remove('open'); editId=null; }
+
+function salvarNovo(){
+  const nome = document.getElementById('nm-nome').value.trim();
+  const logr = document.getElementById('nm-logr').value.trim();
+  if(!nome||!logr){ toast('Informe nome e logradouro','err'); return; }
+  const dados = {
+    processo: document.getElementById('nm-proc').value.trim(),
+    tipo:     document.getElementById('nm-tipo').value,
+    prioridade: document.getElementById('nm-prio').value,
+    nome, logradouro: logr,
+    complemento: '',
+    bairro:   document.getElementById('nm-bairro').value.trim(),
+    cidade:   document.getElementById('nm-cidade').value.trim()||'Cuiabá',
+    uf:       document.getElementById('nm-uf').value.trim()||'MT',
+    vara:     document.getElementById('nm-vara').value.trim(),
+    obs:      document.getElementById('nm-obs').value.trim(),
+  };
+  if(editId){
+    const i=mandados.findIndex(m=>m.id===editId);
+    if(i>=0) mandados[i]={...mandados[i],...dados};
+    toast('Mandado atualizado','ok');
+  } else {
+    mandados.push({id:Date.now().toString(),...dados,status:'pendente',criadoEm:new Date().toISOString()});
+    toast('Mandado adicionado','ok');
+  }
+  save(); fecharNovo(); renderRota();
+}
+
+// ═══════════════════════════════════════════════════════
+// DILIGÊNCIA
+// ═══════════════════════════════════════════════════════
+function abrirDil(id){
+  const m=mandados.find(x=>x.id===id); if(!m) return;
+  ativoId=id; fotos=m.fotos||[];
+
+  const end=enderecoCompleto(m);
+  document.getElementById('dil-nome').textContent = m.nome||'—';
+  document.getElementById('dil-end').textContent  = end;
+  document.getElementById('cert-hdr-nome').textContent = m.nome||'Certidão';
+
+  // Tags — safe DOM build
+  const tagsEl = document.getElementById('dil-tags');
+  tagsEl.innerHTML = '';
+  const addTag=(cls,txt,style='')=>{
+    const s=document.createElement('span');
+    s.className=cls; s.textContent=txt;
+    if(style) s.setAttribute('style',style);
+    tagsEl.appendChild(s);
+  };
+  addTag('badge '+sc(m.status), sl(m.status));
+  addTag('tipo '+tc(m.tipo), tl(m.tipo));
+  if(m.vara){ addTag('time-chip', m.vara); }
+  if(m.processo){ addTag('time-chip', m.processo, 'font-family:var(--mono)'); }
+  void 0;
+
+  // Botões nav
+  const endM = enderecoMaps(m);
+  const enc = encodeURIComponent(endM);
+  const navEl = document.getElementById('dil-nav-btns');
+  navEl.innerHTML = '';
+  const mapsBtn = document.createElement('button');
+  mapsBtn.className = 'btn-maps';
+  mapsBtn.innerHTML = '<i class="fa fa-diamond-turn-right"></i> Rota';
+  mapsBtn.title = 'Traçar rota no Google Maps';
+  mapsBtn.onclick = function(){ abrirMaps(enc); };
+  navEl.appendChild(mapsBtn);
+  const buscaBtn = document.createElement('button');
+  buscaBtn.className = 'btn-maps';
+  buscaBtn.style.cssText = 'background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.4);color:#c4b5fd;margin-left:6px';
+  buscaBtn.innerHTML = '<i class="fa fa-map-pin"></i> Buscar';
+  buscaBtn.title = 'Se a rota falhar, use este para localizar o endereço';
+  buscaBtn.onclick = function(){ abrirMapsBusca(enc); };
+  navEl.appendChild(buscaBtn);
+
+  // Campos
+  document.getElementById('dil-hora').value    = m.horaChegada||'';
+  document.getElementById('d-pessoa').value    = m.pessoaNome||'';
+  document.getElementById('d-qual').value      = m.qualificacao||'';
+  document.getElementById('d-doc').value       = m.doc||'';
+  document.getElementById('d-imovel').value    = m.tipoImovel||'';
+  document.getElementById('d-sit').value       = m.situacaoLocal||'';
+  document.getElementById('d-obslocal').value  = m.obsLocal||'';
+  document.getElementById('d-obs').value       = m.textoLivre||'';
+
+  // Chips
+  document.querySelectorAll('#chips-oc .chip').forEach(c=>{
+    c.classList.toggle('sel', (m.chips||[]).includes(c.textContent.trim()));
+  });
+
+  // Resultado
+  document.querySelectorAll('#res-grid .res-card').forEach(c=>c.className='res-card');
+  if(m.resultado){ const rc=document.querySelector(`[data-res="${m.resultado}"]`); if(rc) rc.classList.add('sel-'+m.resultado); }
+
+  // Fotos
+  renderFotos();
+
+  // Status automático
+  if(!m.status||m.status==='pendente'){ m.status='em_campo'; save(); renderRota(); }
+  atualizarBadgeDil(m.status);
+
+  // Label IA
+  const ia=localStorage.getItem(IA_PREF)||'claude';
+  document.getElementById('cert-ia-sub').textContent=ia==='gemini'?'Usando Gemini ✨':'Usando Claude 🤖';
+
+  navTo('dil');
+  // Auto-hora
+  if(!document.getElementById('dil-hora').value) document.getElementById('dil-hora').value=agora();
+}
+
+function atualizarBadgeDil(s){
+  const el=document.getElementById('dil-status-badge');
+  el.textContent=sl(s); el.className='badge '+sc(s);
+}
+
+// ═══════════════════════════════════════════════════════
+// RESULTADO
+// ═══════════════════════════════════════════════════════
+function selRes(el,res){
+  document.querySelectorAll('#res-grid .res-card').forEach(c=>c.className='res-card');
+  el.classList.add('sel-'+res);
+  const m=mandados.find(x=>x.id===ativoId); if(!m) return;
+  m.resultado=res; m.status=RES_STATUS[res]||m.status;
+  atualizarBadgeDil(m.status); save();
+}
+
+// ═══════════════════════════════════════════════════════
+// CHIPS
+// ═══════════════════════════════════════════════════════
+function toggleChip(el){ el.classList.toggle('sel'); }
+function getChips(){ return [...document.querySelectorAll('#chips-oc .chip.sel')].map(c=>c.textContent.trim()); }
+
+// ═══════════════════════════════════════════════════════
+// FOTOS
+// ═══════════════════════════════════════════════════════
+function addFoto(){ document.getElementById('foto-input').click(); }
+function handleFotos(e){
+  [...e.target.files].forEach(f=>{ const r=new FileReader(); r.onload=ev=>{fotos.push(ev.target.result);renderFotos()}; r.readAsDataURL(f); });
+  e.target.value='';
+}
+function delFoto(i){ fotos.splice(i,1); renderFotos(); }
+function renderFotos(){
+  const g=document.getElementById('foto-grid');
+  g.innerHTML=fotos.map((s,i)=>`<div class="foto-thumb"><img src="${s}"><div class="foto-del" onclick="delFoto(${i})"><i class="fa fa-xmark"></i></div></div>`).join('')+
+    `<div class="foto-add" onclick="addFoto()"><i class="fa fa-camera"></i><span>Adicionar</span></div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// SALVAR DILIGÊNCIA
+// ═══════════════════════════════════════════════════════
+function salvarDil(concluir){
+  const m=mandados.find(x=>x.id===ativoId); if(!m) return;
+  Object.assign(m,{
+    horaChegada: document.getElementById('dil-hora').value,
+    pessoaNome:  document.getElementById('d-pessoa').value.trim(),
+    qualificacao:document.getElementById('d-qual').value,
+    doc:         document.getElementById('d-doc').value.trim(),
+    tipoImovel:  document.getElementById('d-imovel').value,
+    situacaoLocal:document.getElementById('d-sit').value,
+    obsLocal:    document.getElementById('d-obslocal').value.trim(),
+    textoLivre:  document.getElementById('d-obs').value.trim(),
+    chips:       getChips(),
+    fotos,
+    dataRegistro:new Date().toISOString(),
+  });
+  if(concluir){
+    if(!m.resultado){ toast('Selecione o resultado primeiro','err'); return; }
+    m.status=m.resultado;
+    historico=historico.filter(h=>h.id!==m.id);
+    historico.unshift({...m,concluidoEm:new Date().toISOString()});
+    save(); renderRota(); renderHist();
+    toast('Diligência concluída!','ok'); navTo('rota');
+  } else {
+    save(); renderRota(); toast('Salvo!','ok');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CERTIDÃO COM IA
+// ═══════════════════════════════════════════════════════
+async function gerarCertidao(){
+  const m=mandados.find(x=>x.id===ativoId); if(!m){ toast('Abra um mandado primeiro','err'); return; }
+  const ia  = localStorage.getItem(IA_PREF)||'claude';
+  const end = enderecoCompleto(m);
+  const chips = getChips();
+  const cfgData = JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
+
+  const prompt=`Você é ${cfgData.oficial||'Oficial de Justiça'}, matrícula ${cfgData.mat||''}, lotado no ${cfgData.lot||'Tribunal de Justiça do Estado de Mato Grosso'}.
+Redija uma CERTIDÃO formal de diligência judicial em primeira pessoa ("Certifico que...").
+Use linguagem técnico-jurídica. Inclua: abertura formal, descrição, resultado e encerramento.
+Não invente dados ausentes — use expressão genérica. Retorne APENAS o texto da certidão.
+
+DADOS:
+- Tipo de mandado: ${tl(m.tipo)}
+- Processo: ${m.processo||'não informado'}
+- Vara: ${m.vara||'não informada'}
+- Destinatário: ${m.nome}
+- Endereço: ${end}
+- Data: ${new Date().toLocaleDateString('pt-BR')}
+- Hora chegada: ${document.getElementById('dil-hora').value||'não registrado'}
+- Resultado: ${m.resultado ? resTexto(m.resultado) : 'não registrado'}
+- Pessoa encontrada: ${document.getElementById('d-pessoa').value||'nenhuma'}
+- Qualificação: ${document.getElementById('d-qual').value||'—'}
+- Tipo imóvel: ${document.getElementById('d-imovel').value||'—'}
+- Situação local: ${document.getElementById('d-sit').value||'—'}
+- Ocorrências: ${chips.join(', ')||'nenhuma'}
+- Observações: ${document.getElementById('d-obs').value||'nenhuma'}`;
+
+  const btn=document.getElementById('btn-cert');
+  btn.classList.add('loading'); btn.style.pointerEvents='none';
+
+  try{
+    let texto='';
+    if(ia==='gemini'){
+      const key=localStorage.getItem(GEMINI_KEY)||'';
+      if(!key){ toast('Configure a chave Gemini','err'); abrirCfg(); return; }
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+      });
+      if(!r.ok){
+        let errMsg='Erro Gemini';
+        try{ const e=await r.json(); errMsg=e?.error?.message||errMsg; }catch{}
+        throw new Error(errMsg);
+      }
+      const d=await r.json();
+      texto=d.candidates?.[0]?.content?.parts?.[0]?.text||'Erro: resposta vazia.';
+    } else {
+      const key=localStorage.getItem(CLAUDE_KEY)||'';
+      if(!key){ toast('Configure a chave Claude','err'); abrirCfg(); return; }
+      const r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'x-api-key':key,
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true'
+        },
+        body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1200,messages:[{role:'user',content:prompt}]})
+      });
+      if(!r.ok){
+        let errMsg='Erro Claude';
+        try{ const e=await r.json(); errMsg=e?.error?.message||errMsg; }catch{}
+        throw new Error(errMsg);
+      }
+      const d=await r.json();
+      texto=d.content?.[0]?.text||'Erro: resposta vazia.';
+    }
+    document.getElementById('cert-texto').textContent=texto;
+    document.getElementById('cert-edit').value=texto;
+    m.certidao=texto; m.certidaoIA=ia; save();
+    toast(`Certidão gerada via ${ia==='gemini'?'Gemini ✨':'Claude 🤖'}`,'ok');
+    navTo('cert');
+  } catch(e){
+    toast(e?.message||'Erro de conexão com a IA','err');
+    console.error('[certidão IA]',e);
+  } finally {
+    btn.classList.remove('loading'); btn.style.pointerEvents='';
+  }
+}
+
+function resTexto(r){
+  const m={citado:'Citado pessoalmente',ausente:'Destinatário ausente',recusou:'Recusou-se a receber',endereco:'Endereço não localizado',cumprido:'Ato cumprido',prejudicado:'Diligência prejudicada'};
+  return m[r]||r;
+}
+
+function copiarCert(){
+  const t=document.getElementById('cert-texto').textContent;
+  navigator.clipboard?.writeText(t).then(()=>toast('Copiado!','ok')).catch(()=>{ legacyCopy(t); toast('Copiado!','ok'); });
+}
+function compartilharCert(){
+  const t=document.getElementById('cert-texto').textContent;
+  navigator.share?navigator.share({title:'Certidão de Diligência',text:t}).catch(()=>{}):copiarCert();
+}
+function aplicarEdicaoCert(){
+  const t=document.getElementById('cert-edit').value;
+  document.getElementById('cert-texto').textContent=t;
+  const m=mandados.find(x=>x.id===ativoId); if(m){m.certidao=t;save();}
+  toast('Edição aplicada','ok');
+}
+function legacyCopy(t){ const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a); }
+
+// ═══════════════════════════════════════════════════════
+// HISTÓRICO
+// ═══════════════════════════════════════════════════════
+function renderHist(){
+  const el=document.getElementById('list-hist');
+  if(!historico.length){ el.innerHTML='<div class="empty"><i class="fa fa-inbox"></i><p>Nenhuma diligência concluída.</p></div>'; return; }
+  // Build hist safely
+  const histHtml = historico.map(m=>`
+    <div class="hist-item" data-id="${m.id}">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">${esc(m.nome)||'—'}</div>
+          <div style="font-size:11px;color:var(--muted)">${esc(enderecoCompleto(m))}</div>
+        </div>
+        <span class="badge ${sc(m.status)}">${sl(m.status)}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <span class="tipo ${tc(m.tipo)}">${tl(m.tipo)}</span>
+        ${m.vara?`<span class="time-chip">${esc(m.vara)}</span>`:''}
+        <span class="time-chip" style="margin-left:auto"><i class="fa fa-calendar"></i> ${fmtDate(m.concluidoEm||m.dataRegistro)}</span>
+      </div>
+      ${m.certidao?`<div style="margin-top:8px"><button class="btn btn-ghost btn-xs" data-id="${m.id}"><i class="fa fa-file-lines"></i> Ver certidão</button></div>`:''}
+    </div>`).join('');
+  el.innerHTML = histHtml;
+  // Event delegation para hist items
+  el.querySelectorAll('.hist-item').forEach(row=>{
+    row.onclick = function(){ verCertHist(this.dataset.id); };
+    const btn = row.querySelector('.btn');
+    if(btn) btn.onclick = function(e){ e.stopPropagation(); verCertHist(this.dataset.id); };
+  });
+}
+
+function verCertHist(id){
+  const m=historico.find(x=>x.id===id)||mandados.find(x=>x.id===id); if(!m) return;
+  ativoId=m.id;
+  if(m.certidao){ document.getElementById('cert-texto').textContent=m.certidao; document.getElementById('cert-edit').value=m.certidao; document.getElementById('cert-hdr-nome').textContent=m.nome||'Certidão'; navTo('cert'); }
+  else toast('Sem certidão gerada para este mandado','warn');
+}
+
+// ═══════════════════════════════════════════════════════
+// GOOGLE MAPS
+// ═══════════════════════════════════════════════════════
+function aoEntrarMapa(){
+  const key=localStorage.getItem(GMAPS_KEY)||'';
+  if(key&&!mapsOk) loadGoogleMaps(key);
+}
+
+function loadGoogleMaps(key){
+  const old=document.getElementById('gm-script'); if(old) old.remove();
+  const s=document.createElement('script');
+  s.id='gm-script';
+  s.src=`https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=onMapsReady`;
+  s.async=true; s.defer=true;
+  s.onerror=()=>toast('Chave Google Maps inválida','err');
+  document.head.appendChild(s);
+}
+
+window.onMapsReady=function(){
+  mapsOk=true;
+  const ph=document.getElementById('map-ph'); const mp=document.getElementById('map');
+  ph.style.display='none'; mp.style.display='block';
+  mapObj=new google.maps.Map(mp,{
+    zoom:13,center:{lat:-15.6014,lng:-56.0979},
+    disableDefaultUI:true,zoomControl:true,
+    styles:[
+      {elementType:'geometry',stylers:[{color:'#0d1623'}]},
+      {elementType:'labels.text.fill',stylers:[{color:'#8a9bb5'}]},
+      {elementType:'labels.text.stroke',stylers:[{color:'#0d1623'}]},
+      {featureType:'road',elementType:'geometry',stylers:[{color:'#1a2540'}]},
+      {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#1d4270'}]},
+      {featureType:'water',elementType:'geometry',stylers:[{color:'#051525'}]},
+      {featureType:'poi',stylers:[{visibility:'off'}]},
+      {featureType:'transit',stylers:[{visibility:'off'}]},
+    ]
+  });
+  dirSvc =new google.maps.DirectionsService();
+  dirRend=new google.maps.DirectionsRenderer({map:mapObj,suppressMarkers:true,polylineOptions:{strokeColor:'#2563eb',strokeWeight:4,strokeOpacity:.85}});
+  centralizarMapa();
+  toast('Mapa carregado','ok');
+};
+
+function centralizarMapa(){
+  if(!mapObj) return;
+  navigator.geolocation?.getCurrentPosition(p=>{ mapObj.setCenter({lat:p.coords.latitude,lng:p.coords.longitude}); mapObj.setZoom(14); },()=>{});
+}
+
+function limparMarcadores(){ marcadores.forEach(m=>m.setMap(null)); marcadores=[]; }
+
+// InfoWindow global — fecha o anterior ao abrir novo
+let iwAtivo = null;
+
+function criarMarcador(pos,num,nome,status,mandado){
+  const c={pendente:'#f59e0b',em_campo:'#06b6d4',citado:'#10b981',intimado:'#10b981',cumprido:'#10b981',ausente:'#ef4444',recusou:'#ef4444',endereco:'#ef4444',prejudicado:'#9ca3af'}[status]||'#f59e0b';
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40"><path d="M16 0C7.2 0 0 7.2 0 16c0 12 16 24 16 24S32 28 32 16C32 7.2 24.8 0 16 0z" fill="${c}"/><circle cx="16" cy="16" r="9" fill="#0f1623"/><text x="16" y="21" text-anchor="middle" fill="${c}" font-size="11" font-weight="800" font-family="monospace">${num}</text></svg>`;
+  const mk=new google.maps.Marker({position:pos,map:mapObj,title:nome,icon:{url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(32,40),anchor:new google.maps.Point(16,40)}});
+
+  // Monta conteúdo do balão com botões de navegação
+  const end = mandado ? enderecoCompleto(mandado) : nome;
+  const endNav = mandado ? enderecoMaps(mandado) : nome;
+  const endEnc = encodeURIComponent(endNav);
+  const mid = mandado ? mandado.id : null;
+  const statusBadge = mandado ? `<span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;margin-bottom:6px;background:rgba(245,158,11,.15);color:#f59e0b">${sl(mandado.status)}</span>` : '';
+
+  // InfoWindow: pure DOM — sem innerHTML com dados externos
+  const iwContent = document.createElement('div');
+  iwContent.style.cssText = 'font-family:Inter,system-ui,sans-serif;padding:6px 2px;min-width:190px;max-width:250px';
+
+  const mkEl = (tag, styles, text) => {
+    const el = document.createElement(tag);
+    if (styles) el.style.cssText = styles;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  };
+
+  iwContent.appendChild(mkEl('div','font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px;line-height:1.3', nome));
+  iwContent.appendChild(mkEl('div','font-size:11px;color:#64748b;margin-bottom:5px', 'Parada ' + num));
+  if (mandado) {
+    const sb = mkEl('span','display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;margin-bottom:5px;background:rgba(245,158,11,.12);color:#f59e0b', sl(mandado.status));
+    iwContent.appendChild(sb);
+  }
+  iwContent.appendChild(mkEl('div','font-size:11px;color:#475569;margin-bottom:8px;line-height:1.4', end));
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:6px';
+
+  const mkNavBtn = (label, url, bg) => {
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank';
+    a.textContent = label;
+    a.style.cssText = 'flex:1;display:flex;align-items:center;justify-content:center;padding:8px 4px;background:'+bg+';color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600';
+    return a;
+  };
+  btnRow.appendChild(mkNavBtn('📍 Maps', 'https://www.google.com/maps/dir/?api=1&destination='+endEnc+'&travelmode=driving', '#1d6ef5'));
+
+
+
+  if (mid) {
+    const regBtn = document.createElement('button');
+    regBtn.textContent = '📋 Ir';
+    regBtn.style.cssText = 'flex:1;padding:8px 4px;background:#1a2540;color:#e2e8f0;border:1px solid rgba(255,255,255,.15);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit';
+    regBtn.onclick = function(){ if(iwAtivo) iwAtivo.close(); abrirDil(mid); };
+    btnRow.appendChild(regBtn);
+  }
+  iwContent.appendChild(btnRow);
+
+  const iw = new google.maps.InfoWindow({content: iwContent});
+
+  mk.addListener('click',()=>{
+    if(iwAtivo) iwAtivo.close();
+    iw.open(mapObj,mk);
+    iwAtivo = iw;
+  });
+
+  marcadores.push(mk);
+}
+
+// Callback global para o botão "Registrar" dentro do InfoWindow
+window.__iwDil = function(id){
+  if(iwAtivo) iwAtivo.close();
+  abrirDil(id);
+};
+
+async function tracarRota(useGPS=false){
+  const key=localStorage.getItem(GMAPS_KEY)||'';
+  if(!key){ abrirCfg(); return; }
+  if(!mapsOk){ loadGoogleMaps(key); toast('Carregando mapa...',''); return; }
+
+  const pendentes=mandados.filter(isPendente);
+  if(!pendentes.length){ toast('Nenhum mandado pendente','err'); return; }
+  if(pendentes.length===1){ limparMarcadores(); geocodUnico(pendentes); return; }
+
+  const btn=document.getElementById('btn-tracar');
+  const btnGps=document.getElementById('btn-gps');
+
+  if(useGPS){
+    if(!navigator.geolocation){ toast('GPS indisponível neste dispositivo','err'); return; }
+    btnGps.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
+    btnGps.disabled=true;
+    try{
+      const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{
+        enableHighAccuracy:true,
+        timeout:15000,
+        maximumAge:30000
+      }));
+      await executarRota(pendentes,{lat:pos.coords.latitude,lng:pos.coords.longitude},btn);
+    } catch(e){
+      // Erros: 1=permissão negada, 2=posição indisponível, 3=timeout
+      const msg = e.code===1 ? 'Permissão de localização negada. Libere nas configurações do navegador.'
+                : e.code===2 ? 'Sinal GPS fraco. Tente ao ar livre.'
+                : e.code===3 ? 'GPS demorou demais. Tente novamente.'
+                : 'Não foi possível obter localização.';
+      toast(msg,'err');
+      // Fallback: tenta usar origem salva nas configurações
+      const origemSalva=localStorage.getItem(ORIGEM_KEY)||'';
+      if(origemSalva){
+        toast('Usando origem das configurações...','');
+        await executarRota(pendentes, origemSalva, btn);
+      }
+    }
+    btnGps.innerHTML='<i class="fa fa-location-dot"></i>';
+    btnGps.disabled=false;
+    return;
+  }
+
+  const origem=localStorage.getItem(ORIGEM_KEY)||'';
+  const enderecos=pendentes.map(m=>enderecoCompleto(m));
+  const startPoint=origem||(enderecos[0]);
+  const destino=enderecos[enderecos.length-1];
+  const wps=enderecos.slice(origem?0:1,-1).map(a=>({location:a,stopover:true}));
+  await executarRota(pendentes,startPoint,btn,wps,destino);
+}
+
+// Google Maps Directions API: máximo 25 waypoints por requisição
+// Com mais de 25 paradas, divide em grupos e faz múltiplas chamadas
+const MAX_WP = 23; // 23 waypoints + origem + destino = 25 paradas por segmento
+
+async function executarRota(pendentes,origem,btn,waypoints,destino){
+  const enderecos=pendentes.map(m=>enderecoMaps(m));
+  const usaGPS=typeof origem==='object'&&origem.lat;
+
+  toast('Calculando rota...','');
+  btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> Calculando...';
+  limparMarcadores();
+
+  // Se cabe em uma única chamada (≤25 paradas)
+  if(pendentes.length<=25){
+    const wps = usaGPS
+      ? enderecos.slice(0,-1).map(a=>({location:a,stopover:true}))
+      : (waypoints || enderecos.slice(1,-1).map(a=>({location:a,stopover:true})));
+    const dest = usaGPS ? enderecos[enderecos.length-1] : (destino||enderecos[enderecos.length-1]);
+    const orig = usaGPS ? new google.maps.LatLng(origem.lat,origem.lng) : origem;
+    await _chamarDirections(pendentes, orig, dest, wps, usaGPS, btn, true);
+    return;
+  }
+
+  // Mais de 25: divide em segmentos de MAX_WP+2 paradas
+  // Agrupa sem otimização global — só otimiza dentro de cada segmento
+  const grupos = [];
+  for(let i=0; i<pendentes.length; i+=MAX_WP+1){
+    grupos.push(pendentes.slice(i, i+MAX_WP+2));
+  }
+  // Garante que o último grupo inclui o último mandado
+  if(grupos.length>1){
+    const ult=grupos[grupos.length-1];
+    if(ult.length<2) grupos[grupos.length-2].push(...grupos.pop());
+  }
+
+  toast(`Rota em ${grupos.length} segmentos (${pendentes.length} paradas)...`,'');
+
+  let listaFinal=[];
+  let distTotal=0, tempoTotal=0;
+  let primeiroResult=null;
+  let numParada=1;
+
+  for(let g=0; g<grupos.length; g++){
+    const grupo=grupos[g];
+    const gEnds=grupo.map(m=>enderecoMaps(m));
+    let gOrig, gDest, gWps;
+
+    if(g===0){
+      gOrig = usaGPS ? new google.maps.LatLng(origem.lat,origem.lng) : (localStorage.getItem(ORIGEM_KEY)||gEnds[0]);
+      gDest = gEnds[gEnds.length-1];
+      gWps  = (usaGPS||localStorage.getItem(ORIGEM_KEY)) ? gEnds.slice(0,-1).map(a=>({location:a,stopover:true})) : gEnds.slice(1,-1).map(a=>({location:a,stopover:true}));
+    } else {
+      // Começa do último ponto do segmento anterior
+      const prevLast = listaFinal[listaFinal.length-1];
+      gOrig = enderecoCompleto(prevLast);
+      gDest = gEnds[gEnds.length-1];
+      gWps  = gEnds.slice(1,-1).map(a=>({location:a,stopover:true}));
+    }
+
+    const result = await new Promise(res=>{
+      dirSvc.route({
+        origin:gOrig, destination:gDest, waypoints:gWps,
+        optimizeWaypoints:true, travelMode:google.maps.TravelMode.DRIVING
+      },(r,s)=>res({r,s}));
+    });
+
+    if(result.s!=='OK'){
+      btn.innerHTML='<i class="fa fa-route"></i> Traçar Rota';
+      toast('Erro segmento '+(g+1)+': '+result.s,'err'); return;
+    }
+
+    const r=result.r;
+    if(g===0){ primeiroResult=r; dirRend.setDirections(r); }
+
+    // Reconstrói ordem para este grupo
+    const ordem=r.routes[0].waypoint_order;
+    let grupoOrdenado;
+    if(g===0 && !usaGPS && !localStorage.getItem(ORIGEM_KEY)){
+      grupoOrdenado=[grupo[0],...ordem.map(i=>grupo[i+1]),grupo[grupo.length-1]];
+    } else {
+      grupoOrdenado=[...ordem.map(i=>grupo[i]),grupo[grupo.length-1]];
+    }
+
+    // Marcadores numerados contínuos
+    r.routes[0].legs.forEach((leg,i)=>{
+      const m=grupoOrdenado[i];
+      if(m) criarMarcador(leg.start_location,numParada++,m.nome||'—',m.status,m);
+    });
+    if(g===grupos.length-1){
+      const ll=r.routes[0].legs; const lm=grupoOrdenado[grupoOrdenado.length-1];
+      criarMarcador(ll[ll.length-1].end_location,numParada,lm?.nome||'—',lm?.status,lm);
+    }
+
+    r.routes[0].legs.forEach(leg=>{ distTotal+=leg.distance.value; tempoTotal+=leg.duration.value; });
+
+    // Adiciona à lista final (evita duplicar a parada de junção)
+    listaFinal.push(...(g===0?grupoOrdenado:grupoOrdenado.slice(1)));
+  }
+
+  btn.innerHTML='<i class="fa fa-route"></i> Traçar Rota';
+
+  if(usaGPS && primeiroResult){
+    const gm=new google.maps.Marker({position:primeiroResult.routes[0].legs[0].start_location,map:mapObj,icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#10b981',fillOpacity:1,strokeColor:'#fff',strokeWeight:2.5},title:'Minha localização'});
+    marcadores.push(gm);
+  }
+
+  document.getElementById('ri-dist').textContent=(distTotal/1000).toFixed(1)+' km';
+  document.getElementById('ri-tempo').textContent=Math.round(tempoTotal/60)+' min';
+  document.getElementById('ri-stops').textContent=listaFinal.length;
+  document.getElementById('rota-info').style.display='block';
+
+  rotaOrdenada=listaFinal;
+  renderParadas(listaFinal);
+  document.getElementById('paradas-panel').classList.add('open');
+  toast('Rota traçada — '+listaFinal.length+' paradas','ok');
+}
+
+async function _chamarDirections(pendentes,origem,destino,waypoints,usaGPS,btn,unico){
+  return new Promise(res=>{
+    dirSvc.route({
+      origin:origem, destination:destino, waypoints, optimizeWaypoints:true,
+      travelMode:google.maps.TravelMode.DRIVING
+    },(result,status)=>{
+      btn.innerHTML='<i class="fa fa-route"></i> Traçar Rota';
+      if(status!=='OK'){ toast('Erro na rota: '+status,'err'); res(); return; }
+
+      dirRend.setDirections(result);
+
+      const ordem=result.routes[0].waypoint_order;
+      const lista=usaGPS||localStorage.getItem(ORIGEM_KEY)
+        ?[...ordem.map(i=>pendentes[i]),pendentes[pendentes.length-1]]
+        :[pendentes[0],...ordem.map(i=>pendentes[i+1]),pendentes[pendentes.length-1]];
+
+      let dist=0,tempo=0;
+      result.routes[0].legs.forEach(leg=>{ dist+=leg.distance.value; tempo+=leg.duration.value; });
+      document.getElementById('ri-dist').textContent=(dist/1000).toFixed(1)+' km';
+      document.getElementById('ri-tempo').textContent=Math.round(tempo/60)+' min';
+      document.getElementById('ri-stops').textContent=lista.length;
+      document.getElementById('rota-info').style.display='block';
+
+      if(usaGPS){
+        const gm=new google.maps.Marker({position:result.routes[0].legs[0].start_location,map:mapObj,icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#10b981',fillOpacity:1,strokeColor:'#fff',strokeWeight:2.5},title:'Minha localização'});
+        marcadores.push(gm);
+      }
+
+      result.routes[0].legs.forEach((leg,i)=>{ const m=lista[i]; if(m) criarMarcador(leg.start_location,i+1,m.nome||'—',m.status,m); });
+      const ll=result.routes[0].legs; const lm=lista[lista.length-1];
+      criarMarcador(ll[ll.length-1].end_location,lista.length,lm?.nome||'—',lm?.status);
+
+      rotaOrdenada=lista;
+      renderParadas(lista);
+      document.getElementById('paradas-panel').classList.add('open');
+      toast('Rota traçada — '+lista.length+' paradas','ok');
+      res();
+    });
+  });
+}
+
+function geocodUnico(lista){
+  const gc=new google.maps.Geocoder();
+  lista.forEach((m,i)=>{
+    gc.geocode({address:enderecoMaps(m)},(r,s)=>{
+      if(s==='OK'){ criarMarcador(r[0].geometry.location,i+1,m.nome||'—',m.status,m); if(i===0) mapObj.setCenter(r[0].geometry.location); }
+    });
+  });
+}
+
+function renderParadas(lista){
+  const tabsEl = document.getElementById('seg-tabs');
+  const listEl = document.getElementById('paradas-list');
+
+  // Agrupar por bairro
+  const mapaB = {};
+  lista.forEach((m,i)=>{
+    const b = normBairro(m);
+    if(!mapaB[b]) mapaB[b] = [];
+    mapaB[b].push({m, num:i+1});
+  });
+  const bairros = Object.keys(mapaB).sort();
+
+  // Tabs
+  tabsEl.innerHTML = '<div class="seg-tab active" data-b="TODOS">Todos ('+lista.length+')</div>'+
+    bairros.map(b=>'<div class="seg-tab" data-b="'+esc(b)+'">'+esc(b)+' ('+mapaB[b].length+')</div>').join('');
+  tabsEl.querySelectorAll('.seg-tab').forEach(t=>{
+    t.onclick = function(){ filtrarParadasBairro(this, this.dataset.b); };
+  });
+
+  // Lista agrupada
+  let html = '';
+  bairros.forEach(b=>{
+    const items = mapaB[b];
+    html += '<div class="bairro-group" data-bairro="'+esc(b)+'">';
+    html += '<div class="bairro-group-hdr" data-bairro="'+esc(b)+'">';
+    html += '<i class="fa fa-location-dot" style="color:var(--cyan);font-size:12px"></i>';
+    html += '<span class="bg-nome">'+esc(b)+'</span>';
+    html += '<span class="bg-cnt">'+items.length+' parada'+(items.length!==1?'s':'')+'</span>';
+    html += '<button class="bg-tracar" data-bairro="'+esc(b)+'"><i class="fa fa-route"></i> Traçar</button>';
+    html += '<i class="fa fa-chevron-down" style="color:var(--muted);font-size:11px;transition:transform .2s"></i>';
+    html += '</div>';
+    html += '<div class="bairro-group-items open">';
+    items.forEach(({m,num})=>{
+      html += '<div class="parada-row" data-id="'+m.id+'" style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer">';
+      html += '<div style="width:24px;height:24px;border-radius:7px;background:var(--surf2);border:1px solid rgba(255,255,255,.08);font-family:var(--mono);font-size:11px;font-weight:700;color:var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+num+'</div>';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(m.nome||'—')+'</div>';
+      html += '<div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(m.logradouro||'')+'</div>';
+      html += '</div>';
+      html += '<span class="badge '+sc(m.status)+'">'+sl(m.status)+'</span>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  listEl.innerHTML = html;
+
+  // Event delegation — evita onclick inline
+  listEl.querySelectorAll('.parada-row').forEach(row=>{
+    row.onclick = function(){ abrirDil(this.dataset.id); };
+  });
+  listEl.querySelectorAll('.bairro-group-hdr').forEach(hdr=>{
+    hdr.onclick = function(e){
+      if(e.target.closest('.bg-tracar')) return;
+      const items = this.nextElementSibling;
+      const arrow = this.querySelector('.fa-chevron-down');
+      items.classList.toggle('open');
+      if(arrow) arrow.style.transform = items.classList.contains('open')?'':'rotate(-90deg)';
+    };
+  });
+  listEl.querySelectorAll('.bg-tracar').forEach(btn=>{
+    btn.onclick = function(e){
+      e.stopPropagation();
+      tracarBairro(this.dataset.bairro);
+    };
+  });
+}
+
+function filtrarParadasBairro(tab, bairro){
+  document.querySelectorAll('#seg-tabs .seg-tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  document.querySelectorAll('#paradas-list .bairro-group').forEach(g=>{
+    g.style.display = (bairro==='TODOS' || g.dataset.bairro===bairro) ? '' : 'none';
+  });
+}
+
+async function tracarBairro(bairro){
+  if(!mapsOk){ toast('Mapa não carregado','err'); return; }
+  const lista = (rotaOrdenada||mandados.filter(isPendente)).filter(m=>normBairro(m)===bairro);
+  if(!lista.length){ toast('Nenhuma parada neste bairro','err'); return; }
+  if(lista.length===1){ geocodUnico(lista); toast('1 parada — marcador no mapa','ok'); fecharParadas(); return; }
+  const btn = document.getElementById('btn-tracar');
+  const enderecos = lista.map(m=>enderecoMaps(m));
+  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Calculando...';
+  limparMarcadores();
+  dirSvc.route({
+    origin:enderecos[0], destination:enderecos[enderecos.length-1],
+    waypoints:enderecos.slice(1,-1).map(a=>({location:a,stopover:true})),
+    optimizeWaypoints:true, travelMode:google.maps.TravelMode.DRIVING
+  },(result,status)=>{
+    btn.innerHTML = '<i class="fa fa-route"></i> Traçar Rota';
+    if(status!=='OK'){ toast('Erro: '+status,'err'); return; }
+    dirRend.setDirections(result);
+    const ordem = result.routes[0].waypoint_order;
+    const ord = [lista[0],...ordem.map(i=>lista[i+1]),lista[lista.length-1]];
+    let dist=0, tempo=0;
+    result.routes[0].legs.forEach(leg=>{ dist+=leg.distance.value; tempo+=leg.duration.value; });
+    result.routes[0].legs.forEach((leg,i)=>{ const m=ord[i]; if(m) criarMarcador(leg.start_location,i+1,m.nome||'—',m.status,m); });
+    const ll=result.routes[0].legs;
+    criarMarcador(ll[ll.length-1].end_location,ord.length,ord[ord.length-1]?.nome||'—',ord[ord.length-1]?.status,ord[ord.length-1]);
+    document.getElementById('ri-dist').textContent = (dist/1000).toFixed(1)+' km';
+    document.getElementById('ri-tempo').textContent = Math.round(tempo/60)+' min';
+    document.getElementById('ri-stops').textContent = ord.length;
+    document.getElementById('rota-info').style.display = 'block';
+    rotaOrdenada = ord;
+    fecharParadas();
+    toast(esc(bairro)+' — '+ord.length+' paradas','ok');
+  });
+}
+
+function fecharParadas(){ document.getElementById('paradas-panel').classList.remove('open'); }
+
+function abrirRotaExterna(){
+  const lista=rotaOrdenada||mandados.filter(isPendente);
+  if(!lista.length) return;
+  const orig=localStorage.getItem(ORIGEM_KEY)||'';
+  const partes=[...(orig?[encodeURIComponent(orig)]:[]),...lista.map(m=>encodeURIComponent(enderecoMaps(m)))];
+  window.open('https://www.google.com/maps/dir/'+partes.join('/'),'_blank');
+}
+
+// ═══════════════════════════════════════════════════════
+// IMPORTAR DO OJ DIGITAL (arquivo JSON)
+// ═══════════════════════════════════════════════════════
+function abrirImport(){
+  impLista=[]; impSel.clear();
+  document.getElementById('imp-lista').innerHTML='';
+  document.getElementById('imp-status').style.display='none';
+  document.getElementById('imp-btn').style.display='none';
+  document.getElementById('imp-sel-todos').style.display='none';
+  document.getElementById('imp-file').value='';
+  resetDZ();
+  document.getElementById('modal-import').classList.add('open');
+}
+function fecharImport(){ document.getElementById('modal-import').classList.remove('open'); }
+
+function resetDZ(){
+  document.getElementById('dz-icon').className='fa fa-file-arrow-up dz-icon';
+  document.getElementById('dz-icon').style.color='';
+  document.getElementById('dz-title').textContent='Toque para selecionar o arquivo';
+  document.getElementById('dz-sub').textContent='OJ_Digital_DD-MM-AAAA.json';
+  document.getElementById('imp-dz').style.borderColor='';
+}
+function impDragOver(e){ e.preventDefault(); document.getElementById('imp-dz').classList.add('drag'); }
+function impDrop(e){ e.preventDefault(); document.getElementById('imp-dz').classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f) impProcessar(f); }
+function impFileChange(e){ const f=e.target.files[0]; if(f) impProcessar(f); }
+
+function impProcessar(file){
+  const icon=document.getElementById('dz-icon');
+  const title=document.getElementById('dz-title');
+  const sub=document.getElementById('dz-sub');
+  const dz=document.getElementById('imp-dz');
+
+  title.textContent=file.name;
+  sub.textContent=(file.size/1024).toFixed(1)+' KB · lendo...';
+  icon.className='fa fa-spinner fa-spin dz-icon'; icon.style.color='var(--cyan)';
+  dz.style.borderColor='rgba(6,182,212,.5)';
+
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const payload=JSON.parse(e.target.result);
+      // Aceita formato OJ Digital (versao 1.1 e 1.2) e array direto
+      const lista=payload.atendimentos||(Array.isArray(payload)?payload:null);
+      if(!lista) throw new Error('Formato inválido — "atendimentos" não encontrado.');
+
+      // Filtra atendimentos com endereço (logradouro)
+      impLista=lista.filter(a=>(a.endLogradouro||a.logradouro||a['end-logradouro']||a.endereco||'').trim().length>0);
+
+      if(!impLista.length){
+        impStatusMsg('warn','Nenhum atendimento com endereço encontrado.');
+        icon.className='fa fa-triangle-exclamation dz-icon'; icon.style.color='var(--warn)'; return;
+      }
+
+      icon.className='fa fa-circle-check dz-icon'; icon.style.color='var(--green)';
+      dz.style.borderColor='rgba(16,185,129,.4)';
+      sub.textContent=impLista.length+' atendimentos com endereço';
+
+      const dup=impLista.filter(a=>impJaExiste(a)).length;
+      const info=payload.oficial?` · <strong style="color:var(--text)">${payload.oficial}</strong>`:'';
+      const dataExp=payload.exportadoEm?` · ${new Date(payload.exportadoEm).toLocaleDateString('pt-BR')}`:'';
+      impStatusMsg('ok',`<strong style="color:var(--text)">${impLista.length}</strong> atendimentos${info}${dataExp}`+(dup?` · <span style="color:var(--warn)">${dup} já importados</span>`:''));
+
+      // Auto-seleciona: não duplicados E pendentes (status pendente ou não definido)
+      impSel.clear();
+      impLista.forEach((a,i)=>{
+        const s=a.status||'pendente';
+        const isPend = s==='pendente'||s==='';
+        if(!impJaExiste(a) && isPend) impSel.add(i);
+      });
+
+      impRenderLista();
+      document.getElementById('imp-btn').style.display='flex';
+      document.getElementById('imp-sel-todos').style.display='flex';
+      impAtualizarBtn();
+
+    } catch(err){
+      impStatusMsg('err','Erro ao ler arquivo: '+err.message);
+      icon.className='fa fa-xmark-circle dz-icon'; icon.style.color='var(--red)';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function impJaExiste(a){
+  const proc=a.processo||''; const nome=a.nome||''; const logr=a.endLogradouro||a.logradouro||a['end-logradouro']||'';
+  return mandados.some(m=>(proc&&m.processo===proc)||(m.nome===nome&&(m.logradouro||'').startsWith(logr)));
+}
+
+function impStatusMsg(tipo,html){
+  const el=document.getElementById('imp-status');
+  const m={ok:['rgba(16,185,129,.08)','rgba(16,185,129,.3)','var(--green)','fa-circle-check'],warn:['rgba(245,158,11,.08)','rgba(245,158,11,.3)','var(--warn)','fa-triangle-exclamation'],err:['rgba(239,68,68,.08)','rgba(239,68,68,.3)','var(--red)','fa-circle-xmark']};
+  const [bg,border,ic,ico]=m[tipo]||m.ok;
+  el.style.cssText=`display:block;background:${bg};border:1px solid ${border};border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:10px`;
+  el.innerHTML=`<i class="fa ${ico}" style="color:${ic};margin-right:5px"></i>${html}`;
+}
+
+function impRenderLista(){
+  const impEl = document.getElementById('imp-lista');
+  impEl.innerHTML = '';
+  impLista.forEach((a,i)=>{
+    const nome=a.nome||'(sem nome)';
+    const logr=a.endLogradouro||a.logradouro||a['end-logradouro']||'';
+    const bairro=a.endBairro||a.bairro||a['end-bairro']||'';
+    const proc=a.processo||''; const tipo=a.tipo||'citacao';
+    const dup=impJaExiste(a); const sel=impSel.has(i);
+
+    const row = document.createElement('div');
+    row.className = 'imp-row' + (sel?' sel':'');
+    row.dataset.i = i;
+    row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 2px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;border-radius:8px' + (sel?';background:rgba(37,99,235,.07)':'');
+
+    const chk = document.createElement('div');
+    chk.className = 'imp-chk';
+    chk.style.cssText = 'border-color:'+(sel?'var(--accent)':'rgba(255,255,255,.12)')+';background:'+(sel?'var(--accent)':'transparent')+';color:#fff';
+    chk.textContent = sel ? '✓' : '';
+    row.appendChild(chk);
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0';
+
+    const nomeEl = document.createElement('div');
+    nomeEl.style.cssText = 'font-size:13px;font-weight:600;margin-bottom:1px' + (dup?';color:var(--muted)':'');
+    nomeEl.textContent = nome;
+    if(dup){ const sp=document.createElement('span'); sp.style.cssText='font-size:10px;color:var(--warn);font-weight:700;margin-left:4px'; sp.textContent='· já importado'; nomeEl.appendChild(sp); }
+    info.appendChild(nomeEl);
+
+    const endEl = document.createElement('div');
+    endEl.style.cssText = 'font-size:11px;color:var(--muted)';
+    endEl.textContent = [logr,bairro].filter(Boolean).join(', ');
+    info.appendChild(endEl);
+
+    if(proc){ const pEl=document.createElement('div'); pEl.style.cssText='font-size:10px;font-family:var(--mono);color:var(--muted);opacity:.6'; pEl.textContent=proc; info.appendChild(pEl); }
+    row.appendChild(info);
+
+    const tipSpan = document.createElement('span');
+    tipSpan.className = 'tipo ' + tc(tipo);
+    tipSpan.textContent = tl(tipo);
+    row.appendChild(tipSpan);
+
+    row.onclick = function(){ impToggle(parseInt(this.dataset.i)); };
+    impEl.appendChild(row);
+  });
+}
+
+function impToggle(i){ impSel.has(i)?impSel.delete(i):impSel.add(i); impRenderLista(); impAtualizarBtn(); }
+function impSelTodos(){
+  if(impSel.size===impLista.length) impSel.clear(); else impLista.forEach((_,i)=>impSel.add(i));
+  impRenderLista(); impAtualizarBtn();
+}
+function impAtualizarBtn(){
+  const lbl=document.getElementById('imp-btn-lbl'); if(lbl) lbl.textContent=impSel.size?`Importar (${impSel.size})`:'Importar';
+  const t=document.getElementById('imp-sel-todos'); if(t) t.textContent=impSel.size===impLista.length?'Desmarcar':'Todos';
+}
+
+function impExecutar(){
+  if(!impSel.size){ toast('Selecione ao menos um','err'); return; }
+  let ok=0,dup=0;
+  impSel.forEach(i=>{
+    const a=impLista[i];
+    if(impJaExiste(a)){ dup++; return; }
+    mandados.push({
+      id:'oj_'+(a.id||Date.now())+'_'+i+'_'+Math.random().toString(36).slice(2,5),
+      processo: a.processo||'',
+      tipo:     a.tipo||'citacao',
+      nome:     a.nome||'',
+      logradouro:a.endLogradouro||a.logradouro||a['end-logradouro']||a.endereco||'',
+      complemento:a.endComplemento||'',
+      bairro:   a.endBairro||a.bairro||a['end-bairro']||'',
+      cidade:   a.endCidade||a.cidade||a['end-cidade']||'Cuiabá',
+      uf:       a.endUf||a.uf||'MT',
+      vara:     a.vara||'',
+      prioridade:'normal',
+      obs:      [a.obs||'', a.endComplemento||''].filter(Boolean).join(' · '),
+      status:   (()=>{ const s=a.status||''; if(s==='positivo') return 'citado'; if(s==='negativo') return 'ausente'; return 'pendente'; })(),
+      criadoEm: a.dt||new Date().toISOString(),
+      _fonte:   'oj_digital',
+    });
+    ok++;
+  });
+  save(); renderRota(); fecharImport();
+  if(ok&&dup) toast(`${ok} importado(s), ${dup} duplicata(s) ignorada(s)`,'ok');
+  else if(ok) toast(`${ok} mandado(s) importado(s)!`,'ok');
+  else toast('Todos já importados','warn');
+}
+
+// ═══════════════════════════════════════════════════════
+// CONFIGURAÇÕES
+// ═══════════════════════════════════════════════════════
+function abrirCfg(){
+  document.getElementById('cfg-gmaps').value  = localStorage.getItem(GMAPS_KEY)||'';
+  document.getElementById('cfg-claude').value = localStorage.getItem(CLAUDE_KEY)||'';
+  document.getElementById('cfg-gemini').value = localStorage.getItem(GEMINI_KEY)||'';
+  document.getElementById('cfg-origem').value = localStorage.getItem(ORIGEM_KEY)||'';
+  document.getElementById('cfg-oficial').value= cfg.oficial||'';
+  document.getElementById('cfg-mat').value    = cfg.mat||'';
+  document.getElementById('cfg-lot').value    = cfg.lot||'';
+  const ia=localStorage.getItem(IA_PREF)||'claude';
+  document.getElementById('ia-claude').className='cfg-ia-opt'+(ia==='claude'?' sel-claude':'');
+  document.getElementById('ia-gemini').className='cfg-ia-opt'+(ia==='gemini'?' sel-gemini':'');
+  document.getElementById('modal-cfg').classList.add('open');
+}
+function fecharCfg(){ document.getElementById('modal-cfg').classList.remove('open'); }
+
+function selIA(ia){
+  localStorage.setItem(IA_PREF,ia);
+  document.getElementById('ia-claude').className='cfg-ia-opt'+(ia==='claude'?' sel-claude':'');
+  document.getElementById('ia-gemini').className='cfg-ia-opt'+(ia==='gemini'?' sel-gemini':'');
+  const sub=document.getElementById('cert-ia-sub');
+  if(sub) sub.textContent=ia==='gemini'?'Usando Gemini ✨':'Usando Claude 🤖';
+}
+
+function salvarCfg(){
+  const gmaps=document.getElementById('cfg-gmaps').value.trim();
+  const claude=document.getElementById('cfg-claude').value.trim();
+  const gemini=document.getElementById('cfg-gemini').value.trim();
+  if(gmaps)  localStorage.setItem(GMAPS_KEY,gmaps);
+  if(claude) localStorage.setItem(CLAUDE_KEY,claude);
+  if(gemini) localStorage.setItem(GEMINI_KEY,gemini);
+  localStorage.setItem(ORIGEM_KEY,document.getElementById('cfg-origem').value.trim());
+  cfg.oficial=document.getElementById('cfg-oficial').value.trim();
+  cfg.mat    =document.getElementById('cfg-mat').value.trim();
+  cfg.lot    =document.getElementById('cfg-lot').value.trim();
+  save();
+  fecharCfg();
+  if(gmaps){ mapsOk=false; loadGoogleMaps(gmaps); }
+  toast('Configurações salvas','ok');
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVEGAÇÃO EXTERNA
+// ═══════════════════════════════════════════════════════
+// Navega para o endereço de um mandado pelo ID
+function navMandado(id, app){
+  const m = mandados.find(x=>x.id===id);
+  if(!m) return;
+  abrirMaps(encodeURIComponent(enderecoMaps(m)));
+}
+
+function abrirMaps(addr){
+  // Tenta abrir navegação; se falhar, abre busca no Maps
+  const nav = 'https://www.google.com/maps/dir/?api=1&destination='+addr+'&travelmode=driving';
+  const busca = 'https://www.google.com/maps/search/?api=1&query='+addr;
+  const win = window.open(nav,'_blank');
+  // Fallback: se o Maps não traçar rota, o usuário pode usar a busca manualmente
+  if(!win){ window.location.href = busca; }
+}
+
+function abrirMapsBusca(addr){
+  // Abre direto na busca (sem tentar rota) — para endereços problemáticos
+  const url = 'https://www.google.com/maps/search/?api=1&query='+addr;
+  window.open(url,'_blank');
+}
+
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+let _toastT=null;
+function toast(msg,tipo=''){
+  const el=document.getElementById('toast');
+  const ico=document.getElementById('toast-ico');
+  document.getElementById('toast-msg').textContent=msg;
+  el.className='show'+(tipo?' '+tipo:'');
+  ico.className={ok:'fa fa-check',err:'fa fa-xmark',warn:'fa fa-triangle-exclamation'}[tipo]||'fa fa-circle-info';
+  clearTimeout(_toastT); _toastT=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ═══════════════════════════════════════════════════════
+// FECHAR MODAIS AO CLICAR FORA
+// ═══════════════════════════════════════════════════════
+['modal-novo','modal-import','modal-cfg'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) e.target.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+load();
+renderRota();
+// Carrega mapa se já tem chave
+const _gkey=localStorage.getItem(GMAPS_KEY);
+if(_gkey) setTimeout(()=>{ /* mapa carrega ao entrar na aba */ },0);
+// Auto-preenche hora ao focar no campo
+document.getElementById('dil-hora').addEventListener('focus',function(){ if(!this.value) this.value=agora(); });
+</script>
+</body>
+</html>
